@@ -103,71 +103,155 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 
 ---
 
-## Quick Start
+## Quick Start & Step-by-Step Instructions
 
-### 1. Instant Run with npx (No Installation Needed)
-
-Run TermLink directly in your terminal:
-```bash
-npx @2we/tl
-```
-
-Or join a room instantly by 2-digit code:
-```bash
-npx @2we/tl 47
-```
+> **Important Concept**: TermLink uses a **Signaling Server** as a matchmaking hub to coordinate 2-digit room discovery (`00`–`99`) and peer authentication. Once matched, terminals connect directly peer-to-peer (or via an opaque E2EE relay).
+>
+> You can run a signaling server locally for instant testing (`tl server`), or point to a 24/7 cloud server for internet-wide collaboration.
 
 ---
 
-### 2. Global Installation
+### Step 1: Install TermLink
 
-Install TermLink globally to use the `tl` command from any terminal:
+Install the global CLI package on your machine:
 
 ```bash
 npm install -g @2we/tl
 ```
 
-Once installed, you can use either `termlink` or the short `tl` alias anywhere:
+*(Or run directly on-demand without installing using `npx @2we/tl`)*.
+
+---
+
+### Step 2: Start the Signaling Server (Terminal 1)
+
+Before creating or joining rooms on your local network, start your local signaling server:
+
 ```bash
-# Interactive menu:
-tl
-# or: termlink
-
-# Create a room:
-tl create
-# or: termlink create
-
-# Join room 47:
-tl 47
-# or: termlink 47
+tl server
+```
+```text
+TermLink Signaling Server v1.0.0
+Listening on ws://0.0.0.0:3000/ws
+Health check: http://localhost:3000/health
 ```
 
 ---
 
-### 3. Run from Source (Local Development)
+### Step 3: Create a Room as Host (Terminal 2)
 
+In a new terminal window, create your collaboration room:
+
+```bash
+tl create --name "Dev Room"
+```
+```text
+══════════════════════════════════════════════════════════════
+  ROOM CREATED: Dev Room
+  Room Code:    47
+  Join Link:    http://localhost:3000/join/47
+══════════════════════════════════════════════════════════════
+Waiting for peers to join...
+termlink[47]>
+```
+Your 2-digit room code (e.g. `47`) is now active!
+
+---
+
+### Step 4: Join the Room (Terminal 3 or Another Computer)
+
+In a third terminal (or another PC on the same Wi-Fi/LAN):
+
+```bash
+tl 47
+```
+*(Or join via the invite link: `tl join http://localhost:3000/join/47`)*.
+
+---
+
+### Step 5: Host Approves the Guest (Security Handshake)
+
+In **Terminal 2 (Host)**, an incoming peer prompt will appear displaying the guest's device name, OS, and cryptographic fingerprint:
+
+```text
+Incoming peer join request:
+  Name:        UBUNTU-LAPTOP
+  Platform:    linux
+  Fingerprint: 3A:5B:9C:12:F4:7E:88:21:09:44:6D:FE:1A:3C:55:B2
+  Run /approve req_a1b2c3 or /reject req_a1b2c3
+```
+
+Simply approve the guest:
+```bash
+/approve
+```
+Both terminals are now connected in real-time, end-to-end encrypted P2P collaboration!
+
+---
+
+### Step 6: Collaborate Directly
+
+Inside the interactive prompt (`termlink[47]> `):
+
+* **Group Chat**: Just type any message and press Enter.
+* **Private Message**: `/msg <peer-name> secret text`
+* **Send a File with SHA-256 Checksum**:
+  ```bash
+  /send ./project.zip
+  ```
+  *(The recipient receives a prompt and runs `/accept-file` to download).*
+* **Propose a Shell Command (Safe Review)**:
+  ```bash
+  /propose UBUNTU-LAPTOP docker compose up -d
+  ```
+  *(The recipient sees a danger-risk evaluation and can `/accept-cmd` or `/reject-cmd` without risk of auto-execution).*
+* **Share Host Terminal (Opt-In)**:
+  ```bash
+  /share-term
+  ```
+  *(Spawns a host PowerShell/Bash shell; peers enter in read-only mode by default).*
+* **Exit the Room**:
+  ```bash
+  /leave
+  ```
+
+---
+
+### Connecting Across the Internet (Worldwide Collaboration)
+
+If you want team members across the world to collaborate without you having to run `tl server` locally:
+
+#### 1. Deploy the 24/7 Signaling Server to Cloud in 2 Minutes:
+Use the included [Dockerfile](Dockerfile) to deploy to **Railway, Render, Fly.io, or Google Cloud Run**:
+- Set Port: `PORT=3000`
+- Set Public URL: `TERMLINK_PUBLIC_BASE_URL=https://your-domain.up.railway.app`
+- Health check URL: `https://your-domain.up.railway.app/health`
+
+#### 2. Configure Your Client Once:
+Point your TermLink CLI to your public cloud server:
+```bash
+tl config set signalingServer wss://your-domain.up.railway.app/ws
+```
+
+Now, anyone anywhere on Earth can simply run:
+```bash
+tl create
+# and your peer runs:
+tl 47
+```
+*(No local `tl server` command needed!)*
+
+---
+
+### Running from Source (Local Git Repository)
+
+If you are developing or contributing to TermLink:
 ```bash
 git clone https://github.com/adityasing9/TermLink.git
 cd TermLink
 npm install
 npm run build
-```
-
-#### Step 1: Start Signaling Server (Terminal 1)
-```bash
-npm run signaling
-# Runs on ws://0.0.0.0:3000/ws
-```
-
-#### Step 2: Create a Room as Host (Terminal 2)
-```bash
-npm run cli -- create --name "BACKEND TEAM"
-# Output: Room created! Code: 47
-```
-
-#### Step 3: Join Room from Another Machine or Terminal (Terminal 3)
-```bash
-npm run cli -- 47
+npm test
 ```
 
 ---
