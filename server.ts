@@ -30,8 +30,9 @@ const httpServer = http.createServer((req, res) => {
         `TermLink Room Code: ${code}`,
         '',
         'Join from your terminal:',
-        `  termlink ${code}`,
-        `  termlink join ${publicBaseUrl}/join/${code}`,
+        `  npx @2we/tl ${code}`,
+        `  tl ${code}`,
+        `  tl join ${publicBaseUrl}/join/${code}`,
         '',
         `Signaling endpoint: ${publicBaseUrl.replace(/^http/, 'ws')}/ws`,
       ].join('\n') + '\n'
@@ -48,7 +49,8 @@ const httpServer = http.createServer((req, res) => {
         'TermLink Secure Invitation',
         '',
         'Join from your terminal:',
-        `  termlink join ${publicBaseUrl}/invite/${token}`,
+        `  npx @2we/tl join ${publicBaseUrl}/invite/${token}`,
+        `  tl join ${publicBaseUrl}/invite/${token}`,
         '',
         `Signaling endpoint: ${publicBaseUrl.replace(/^http/, 'ws')}/ws`,
       ].join('\n') + '\n'
@@ -63,11 +65,14 @@ const httpServer = http.createServer((req, res) => {
       `WebSocket signaling: ${publicBaseUrl.replace(/^http/, 'ws')}/ws`,
       `Health check:        ${publicBaseUrl}/health`,
       '',
-      'CLI usage:',
-      '  npm install -g termlink',
-      '  termlink',
-      '  termlink create',
-      '  termlink 47',
+      'Instant run (npx):',
+      '  npx @2we/tl',
+      '  npx @2we/tl 47',
+      '',
+      'Global install:',
+      '  npm install -g @2we/tl',
+      '  tl create',
+      '  tl 47',
     ].join('\n') + '\n'
   );
 });

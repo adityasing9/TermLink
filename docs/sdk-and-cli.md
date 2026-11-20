@@ -1,9 +1,24 @@
-# Developer SDK & npm Publishing Guide
+# Developer SDK & CLI Reference
+
+## Installation & Quick Execution
+
+```bash
+# Run instantly without installing:
+npx @2we/tl
+
+# Install CLI globally:
+npm install -g @2we/tl
+tl create
+tl 47
+
+# Install SDK in your TypeScript/JavaScript project:
+npm install @2we/tl
+```
 
 ## Using the TypeScript SDK
 
 ```typescript
-import { TermLink } from "termlink";
+import { TermLink } from "@2we/tl";
 
 const client = new TermLink({
   deviceName: "AADI-PC",

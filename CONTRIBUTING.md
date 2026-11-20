@@ -6,7 +6,7 @@ We welcome contributions across networking, CLI UX, cross-platform compatibility
 
 ```bash
 npm install
-npm run dev          # Starts Express + WebSocket signaling + Web Companion on http://localhost:3000
+npm run dev          # Starts standalone WebSocket signaling server on http://localhost:3000
 npm run cli -- create
 npm run cli -- 47
 ```

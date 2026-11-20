@@ -238,10 +238,13 @@ npm run cli -- 47
 
 ## Complete CLI Command Reference
 
+> **Tip**: You can use either the short alias `tl` or the full command `termlink` interchangeably for every command below (e.g. `tl create`, `tl 47`, `tl diagnostics`, `tl chat 47`).
+
 ### Interactive Menu
-Running `termlink` without arguments opens an interactive navigation menu:
+Running `tl` (or `termlink`) without arguments opens an interactive navigation menu:
 ```bash
-termlink
+tl
+# or: termlink
 ```
 ```text
   ════════════════════════════════════════════════════════

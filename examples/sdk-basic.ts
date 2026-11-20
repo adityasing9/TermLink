@@ -14,7 +14,7 @@ async function main() {
     requireHostApproval: true,
   });
 
-  console.log(`Room created! Join with: termlink ${room.code}`);
+  console.log(`Room created! Join with: tl ${room.code} (or termlink ${room.code})`);
   console.log(`Invite link: ${room.joinUrl}`);
 
   room.on('joinRequest', (req) => {
