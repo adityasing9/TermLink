@@ -687,13 +687,15 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
   await program.parseAsync(argv);
 }
 
-// Run when executed directly as a CLI binary (`termlink`, `node dist/bin/termlink.mjs`, or `tsx apps/cli/src/index.ts`)
-const invoked = process.argv[1] || '';
+// Run when executed directly as a CLI binary (`termlink`, `tl`, `node dist/bin/termlink.mjs`, or `tsx apps/cli/src/index.ts`)
+const invoked = (process.argv[1] || '').toLowerCase();
 const isMain =
-  invoked.endsWith('termlink') ||
-  invoked.endsWith('termlink.mjs') ||
-  invoked.endsWith('index.ts') ||
-  invoked.endsWith('index.js');
+  !process.argv[1] ||
+  invoked.includes('termlink') ||
+  invoked.includes('tl') ||
+  invoked.endsWith('.ts') ||
+  invoked.endsWith('.js') ||
+  invoked.endsWith('.mjs');
 
 if (isMain) {
   runCli().catch((err) => {

@@ -127,16 +127,19 @@ Install TermLink globally to use the `termlink` command from any terminal:
 npm install -g @adityasing9/termlink
 ```
 
-Once installed, use the short `termlink` command anywhere:
+Once installed, you can use either `termlink` or the short `tl` alias anywhere:
 ```bash
 # Interactive menu:
-termlink
+tl
+# or: termlink
 
 # Create a room:
-termlink create
+tl create
+# or: termlink create
 
 # Join room 47:
-termlink 47
+tl 47
+# or: termlink 47
 ```
 
 ---
