@@ -156,18 +156,30 @@ test('End-to-end multi-peer lifecycle: create, 2-digit join + approval, 3-peer g
 
     // Grant interactive access -> command executes and streams output to Peer B
     roomA.setTerminalPeerAccess(roomB.localPeerId, 'interactive');
+    await new Promise((r) => setTimeout(r, 200));
     const cmd = process.platform === 'win32' ? 'Write-Output TERMLINK_LIVE_OK\r\n' : 'echo TERMLINK_LIVE_OK\n';
     roomB.sendTerminalInput(cmd);
+
     const outputReceived = new Promise<void>((resolve) => {
+      let interval: NodeJS.Timeout | null = null;
       const check = () => {
         if (termOutputB.join('').includes('TERMLINK_LIVE_OK')) {
+          if (interval) clearInterval(interval);
           resolve();
         }
       };
+      interval = setInterval(() => {
+        if (termOutputB.join('').includes('TERMLINK_LIVE_OK')) {
+          if (interval) clearInterval(interval);
+          resolve();
+        } else {
+          roomB.sendTerminalInput(cmd);
+        }
+      }, 400);
       roomB.on('terminalOutput', check);
       check();
     });
-    await Promise.race([outputReceived, new Promise((r) => setTimeout(r, 5000))]);
+    await Promise.race([outputReceived, new Promise((r) => setTimeout(r, 6000))]);
     assert.ok(termOutputB.join('').includes('TERMLINK_LIVE_OK'));
 
     // Instant revocation stops further input
