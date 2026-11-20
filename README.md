@@ -131,6 +131,9 @@ TermLink runs on any machine with **Node.js (v20+ LTS)**. If your terminal says 
   fnm install --lts
   ```
 
+> [!IMPORTANT]
+> **Restart your terminal window** after installing Node.js so that `node`, `npm`, and `npx` are loaded into your system PATH.
+
 ```text
 ┌─────────────────────────────────────────┐         ┌─────────────────────────────────────────┐
 │            Computer A (Host)            │         │           Computer B (Friend)           │

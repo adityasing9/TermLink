@@ -515,7 +515,7 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     } else {
       console.error(chalk.cyan('  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs'));
     }
-    console.error('');
+    console.error(chalk.yellow('  (IMPORTANT: Restart your terminal window after installing Node.js)\n'));
     process.exit(1);
   }
 
@@ -798,6 +798,7 @@ if (isMain) {
     } else {
       console.error(chalk.dim('  • Install/Update Node.js (LTS): ') + chalk.cyan('curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs'));
     }
+    console.error(chalk.yellow('  • IMPORTANT: Always restart your terminal after installing Node.js so PATH updates!'));
     console.error(chalk.dim('  • Check network & signaling:   ') + chalk.cyan('tl diagnostics'));
     console.error(chalk.dim('  • Reset configuration:         ') + chalk.cyan('tl config reset\n'));
     process.exit(1);
