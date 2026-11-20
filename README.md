@@ -1,8 +1,8 @@
-# TermLink (`@2we/termlink`)
+# TermLink (`@2we/tl`)
 
 > **Connect terminals. Share files. Collaborate directly. Peer-to-peer.**
 
-[![npm version](https://img.shields.io/npm/v/@2we/termlink.svg?color=cb3837)](https://www.npmjs.com/package/@2we/termlink)
+[![npm version](https://img.shields.io/npm/v/@2we/tl.svg?color=cb3837)](https://www.npmjs.com/package/@2we/tl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node: >=20.0.0](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![Platform: Windows | Linux | macOS](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
@@ -109,22 +109,22 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 
 Run TermLink directly in your terminal:
 ```bash
-npx @2we/termlink
+npx @2we/tl
 ```
 
 Or join a room instantly by 2-digit code:
 ```bash
-npx @2we/termlink 47
+npx @2we/tl 47
 ```
 
 ---
 
 ### 2. Global Installation
 
-Install TermLink globally to use the `termlink` command from any terminal:
+Install TermLink globally to use the `tl` command from any terminal:
 
 ```bash
-npm install -g @2we/termlink
+npm install -g @2we/tl
 ```
 
 Once installed, you can use either `termlink` or the short `tl` alias anywhere:
@@ -557,7 +557,7 @@ When inside an active room session prompt (`termlink[47]> `), the following comm
 You can embed TermLink directly into your own Node.js or TypeScript applications:
 
 ```typescript
-import { TermLink } from '@2we/termlink';
+import { TermLink } from '@2we/tl';
 
 async function main() {
   const client = new TermLink({
