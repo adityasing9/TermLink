@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-export const TERMLINK_VERSION = '1.0.2';
+export const TERMLINK_VERSION = '1.0.3';
 export const PROTOCOL_VERSION = '1.0';
 
 export type PeerRole = 'owner' | 'admin' | 'collaborator' | 'viewer' | 'guest';
@@ -68,7 +68,7 @@ export const DEFAULT_CONFIG: TermLinkConfig = {
   stunServers: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
   turnServers: [],
   defaultRoomMode: 'quick',
-  requireHostApproval: true,
+  requireHostApproval: false,
   maxPeers: 8,
   fileTransferDirectory: './downloads',
   autoAcceptFiles: false,

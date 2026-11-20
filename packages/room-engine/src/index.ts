@@ -183,7 +183,7 @@ export class RoomEngine {
       roomName: params.roomName.trim().slice(0, 64) || `${params.ownerIdentity.deviceName} Room`,
       ownerPeerId: params.ownerPeerId,
       publicQuickConnect: params.publicQuickConnect ?? true,
-      requireHostApproval: params.requireHostApproval ?? true,
+      requireHostApproval: params.requireHostApproval ?? false,
       passwordHash,
       passwordSalt,
       maxPeers,

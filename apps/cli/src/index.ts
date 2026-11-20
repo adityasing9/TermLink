@@ -381,7 +381,7 @@ async function handleCreateRoom(opts: { name?: string; approval?: boolean; passw
     await client.initialize();
     const room = await client.createRoom({
       roomName: opts.name || `${cfg.deviceName} Room`,
-      requireHostApproval: opts.approval ?? cfg.requireHostApproval,
+      requireHostApproval: Boolean(opts.approval),
       password: opts.password,
       preferredCode: opts.code,
     });
@@ -526,7 +526,7 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .alias('host')
     .description('Create a new TermLink room with a 2-digit code')
     .option('-n, --name <name>', 'Room name')
-    .option('--no-approval', 'Allow joining without host approval')
+    .option('--approval', 'Require host approval for each peer (default: off)')
     .option('-p, --password <password>', 'Optional room password')
     .option('--code <code>', 'Preferred 2-digit room code (00-99)')
     .option('-s, --signaling <url>', 'Override signaling server WebSocket URL')

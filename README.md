@@ -113,10 +113,9 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 │  1. Create room:                        │         │  1. Join using the 2-digit code:        │
 │     npx @2we/tl create                  │         │     npx @2we/tl 47                      │
 │                                         │         │                                         │
-│  2. Room Code appears: 47               │         │  2. Waits for approval...               │
+│  2. Room Code appears: 47               │         │  2. Instantly connected!                │
 │                                         │         │                                         │
-│  3. Type to accept friend:              │ ◄═════► │  3. Connected!                          │
-│     /approve                            │         │     E2EE Chat, P2P Files & Terminal     │
+│  3. Connected!                          │ ◄═════► │  3. E2EE Chat, P2P Files & Terminal     │
 └─────────────────────────────────────────┘         └─────────────────────────────────────────┘
 ```
 
@@ -154,20 +153,14 @@ npx @2we/tl 47
 
 ---
 
-### Step 3: Approve and start collaborating
-On **Computer A**, an alert will pop up showing your friend's computer name and security fingerprint:
+### Step 3: Instantly Connected!
+**Boom! No approval needed!**
+Both terminals are immediately connected in real-time with end-to-end encryption!
+Computer A's terminal will announce:
 ```text
-Incoming peer join request:
-  Name:        RAHUL-LAPTOP (windows)
-  Fingerprint: 3A:5B:9C:12:F4:7E:88:21:09:44:6D:FE:1A:3C:55:B2
-  Run /approve to accept
+● RAHUL-LAPTOP joined (collaborator)
 ```
-
-Type `/approve` and hit Enter:
-```text
-/approve
-```
-**Boom! You are now connected in real-time, end-to-end encrypted collaboration!**
+And Computer B's terminal enters the room immediately!
 
 ---
 
