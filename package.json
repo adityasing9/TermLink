@@ -1,6 +1,6 @@
 {
   "name": "@2we/tl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cross-platform P2P terminal collaboration platform — connect terminals, share files with SHA-256 verification, and collaborate directly.",
   "license": "MIT",
   "type": "module",

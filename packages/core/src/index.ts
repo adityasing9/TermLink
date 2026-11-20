@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-export const TERMLINK_VERSION = '1.0.1';
+export const TERMLINK_VERSION = '1.0.2';
 export const PROTOCOL_VERSION = '1.0';
 
 export type PeerRole = 'owner' | 'admin' | 'collaborator' | 'viewer' | 'guest';
@@ -63,8 +63,8 @@ export interface TermLinkConfig {
 
 export const DEFAULT_CONFIG: TermLinkConfig = {
   deviceName: 'TERMLINK-NODE',
-  signalingServer: 'ws://localhost:3000/ws',
-  publicBaseUrl: 'http://localhost:3000',
+  signalingServer: 'wss://termlink-x5qx.onrender.com/ws',
+  publicBaseUrl: 'https://termlink-x5qx.onrender.com',
   stunServers: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
   turnServers: [],
   defaultRoomMode: 'quick',
