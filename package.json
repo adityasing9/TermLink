@@ -18,8 +18,8 @@
     "node": ">=20.0.0"
   },
   "bin": {
-    "termlink": "./dist/bin/termlink.mjs",
-    "termlink-server": "./dist/signaling-server.mjs"
+    "termlink": "dist/bin/termlink.mjs",
+    "termlink-server": "dist/signaling-server.mjs"
   },
   "main": "./dist/sdk/index.mjs",
   "types": "./dist/types/packages/sdk/src/index.d.ts",
