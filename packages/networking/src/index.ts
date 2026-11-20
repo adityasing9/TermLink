@@ -28,7 +28,7 @@ export class TopologyManager {
   public readonly maxDirectConnectionsPerPeer: number;
 
   constructor(options: { maxPeers?: number; meshThreshold?: number; maxDirectConnectionsPerPeer?: number } = {}) {
-    this.maxPeers = Math.min(20, Math.max(2, options.maxPeers ?? 8));
+    this.maxPeers = Math.min(50, Math.max(2, options.maxPeers ?? 8));
     this.meshThreshold = options.meshThreshold ?? 8;
     this.maxDirectConnectionsPerPeer = options.maxDirectConnectionsPerPeer ?? 7;
   }

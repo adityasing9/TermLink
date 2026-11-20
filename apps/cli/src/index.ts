@@ -372,7 +372,7 @@ async function ensureLocalServerIfConfigured(serverUrl: string): Promise<http.Se
   }
 }
 
-async function handleCreateRoom(opts: { name?: string; approval?: boolean; password?: string; code?: string; signaling?: string; nonInteractive?: boolean }): Promise<void> {
+async function handleCreateRoom(opts: { name?: string; approval?: boolean; password?: string; code?: string; maxPeers?: number; signaling?: string; nonInteractive?: boolean }): Promise<void> {
   const cfg = configManager.load();
   if (opts.signaling) cfg.signalingServer = opts.signaling;
   const autoServer = await ensureLocalServerIfConfigured(cfg.signalingServer);
@@ -385,6 +385,7 @@ async function handleCreateRoom(opts: { name?: string; approval?: boolean; passw
       requireHostApproval: Boolean(opts.approval),
       password: opts.password,
       preferredCode: opts.code,
+      maxPeers: opts.maxPeers ? Number(opts.maxPeers) : cfg.maxPeers,
     });
 
     if (opts.nonInteractive) {
@@ -528,6 +529,7 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .alias('host')
     .description('Create a new TermLink room with a 2-digit code')
     .option('-n, --name <name>', 'Room name')
+    .option('-m, --max-peers <number>', 'Maximum peer limit (2-50, default: 8)')
     .option('--approval', 'Require host approval for each peer (default: off)')
     .option('-p, --password <password>', 'Optional room password')
     .option('--code <code>', 'Preferred 2-digit room code (00-99)')
@@ -539,6 +541,7 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
         approval: opts.approval,
         password: opts.password,
         code: opts.code,
+        maxPeers: opts.maxPeers ? Number(opts.maxPeers) : undefined,
         signaling: opts.signaling,
         nonInteractive: opts.nonInteractive,
       });

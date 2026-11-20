@@ -3,7 +3,11 @@ import { TermLinkSignalingServer } from './apps/signaling-server/src/index';
 import { TERMLINK_VERSION } from './packages/core/src/index';
 
 const PORT = Number(process.env.PORT || 3000);
-const publicBaseUrl = (process.env.TERMLINK_PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+const publicBaseUrl = (
+  process.env.TERMLINK_PUBLIC_BASE_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  'https://termlink-x5qx.onrender.com'
+).replace(/\/$/, '');
 
 const httpServer = http.createServer((req, res) => {
   const url = new URL(req.url || '/', publicBaseUrl);

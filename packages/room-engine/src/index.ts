@@ -157,7 +157,7 @@ export class RoomEngine {
     const roomId = `rm_${crypto.randomBytes(10).toString('hex')}`;
     const code = this.allocateTwoDigitCode(params.preferredCode);
     const now = Date.now();
-    const maxPeers = Math.min(20, Math.max(2, params.maxPeers ?? 8));
+    const maxPeers = Math.min(50, Math.max(2, params.maxPeers ?? 8));
 
     let passwordSalt: string | null = null;
     let passwordHash: string | null = null;
