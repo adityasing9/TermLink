@@ -372,8 +372,9 @@ async function ensureLocalServerIfConfigured(serverUrl: string): Promise<http.Se
   }
 }
 
-async function handleCreateRoom(opts: { name?: string; approval?: boolean; password?: string; code?: string; nonInteractive?: boolean }): Promise<void> {
+async function handleCreateRoom(opts: { name?: string; approval?: boolean; password?: string; code?: string; signaling?: string; nonInteractive?: boolean }): Promise<void> {
   const cfg = configManager.load();
+  if (opts.signaling) cfg.signalingServer = opts.signaling;
   const autoServer = await ensureLocalServerIfConfigured(cfg.signalingServer);
   const client = new TermLink(cfg);
 
@@ -400,8 +401,9 @@ async function handleCreateRoom(opts: { name?: string; approval?: boolean; passw
   }
 }
 
-async function handleJoinRoom(target: string, opts: { password?: string; nonInteractive?: boolean }): Promise<void> {
+async function handleJoinRoom(target: string, opts: { password?: string; signaling?: string; nonInteractive?: boolean }): Promise<void> {
   const cfg = configManager.load();
+  if (opts.signaling) cfg.signalingServer = opts.signaling;
   const client = new TermLink(cfg);
   await client.initialize();
 
@@ -532,12 +534,12 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .option('-s, --signaling <url>', 'Override signaling server WebSocket URL')
     .option('--non-interactive', 'Output room JSON and exit (for scripts)')
     .action(async (opts) => {
-      if (opts.signaling) configManager.setKey('signalingServer', opts.signaling);
       await handleCreateRoom({
         name: opts.name,
         approval: opts.approval,
         password: opts.password,
         code: opts.code,
+        signaling: opts.signaling,
         nonInteractive: opts.nonInteractive,
       });
     });
@@ -546,11 +548,10 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .command('join <target>')
     .description('Join a room by 2-digit code (e.g. 47) or invitation link')
     .option('-p, --password <password>', 'Room password if required')
-    .option('-s, --signaling <url>', 'Override signaling server WebSocket URL')
+    .option('-s, --signaling <url>', 'Override signaling server WebSocket URL for this session')
     .option('--non-interactive', 'Connect and exit without interactive prompt')
     .action(async (target: string, opts) => {
-      if (opts.signaling) configManager.setKey('signalingServer', opts.signaling);
-      await handleJoinRoom(target, { password: opts.password, nonInteractive: opts.nonInteractive });
+      await handleJoinRoom(target, { password: opts.password, signaling: opts.signaling, nonInteractive: opts.nonInteractive });
     });
 
   program

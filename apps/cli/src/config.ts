@@ -28,17 +28,19 @@ export class ConfigManager {
     }
     try {
       const parsed = JSON.parse(fs.readFileSync(this.filePath, 'utf8')) as Partial<TermLinkConfig>;
-      // Auto-migrate old localhost defaults to live cloud signaling server
+      // Auto-migrate old localhost or test defaults to live cloud signaling server
       if (
-        parsed.signalingServer === 'ws://localhost:3000/ws' ||
-        parsed.signalingServer === 'ws://127.0.0.1:3000/ws' ||
-        parsed.signalingServer === 'ws://0.0.0.0:3000/ws'
+        !parsed.signalingServer ||
+        parsed.signalingServer.includes('127.0.0.1') ||
+        parsed.signalingServer.includes('localhost') ||
+        parsed.signalingServer.includes('0.0.0.0') ||
+        parsed.signalingServer.includes('your-domain.com')
       ) {
         parsed.signalingServer = DEFAULT_CONFIG.signalingServer;
         parsed.publicBaseUrl = DEFAULT_CONFIG.publicBaseUrl;
       }
       // Ensure host approval defaults to false for seamless zero-click joining
-      if (parsed.requireHostApproval === undefined) {
+      if (parsed.requireHostApproval !== true) {
         parsed.requireHostApproval = false;
       }
       const res = validateConfig(parsed);

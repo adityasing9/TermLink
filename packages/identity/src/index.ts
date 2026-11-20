@@ -156,6 +156,9 @@ export function decryptFromPeer<T = unknown>(
 }
 
 export function getDefaultStorageDir(): string {
+  if (process.env.TERMLINK_STORAGE_DIR) {
+    return process.env.TERMLINK_STORAGE_DIR;
+  }
   const home = os.homedir();
   return path.join(home, '.termlink');
 }
