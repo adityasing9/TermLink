@@ -504,6 +504,21 @@ async function runMainMenu(): Promise<void> {
 }
 
 export async function runCli(argv: string[] = process.argv): Promise<void> {
+  const nodeMajor = parseInt(process.versions.node.split('.')[0], 10);
+  if (nodeMajor < 20) {
+    console.error(chalk.red(`\nTermLink requires Node.js >= 20.0.0 (you are running Node ${process.version}).`));
+    console.error(chalk.yellow('\nTo install or update Node.js LTS:'));
+    if (process.platform === 'win32') {
+      console.error(chalk.cyan('  winget install OpenJS.NodeJS.LTS'));
+    } else if (process.platform === 'darwin') {
+      console.error(chalk.cyan('  brew install node'));
+    } else {
+      console.error(chalk.cyan('  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs'));
+    }
+    console.error('');
+    process.exit(1);
+  }
+
   const rawArgs = argv.slice(2);
 
   // Quick-join shortcut: `termlink 47`
@@ -774,7 +789,17 @@ const isMain =
 
 if (isMain) {
   runCli().catch((err) => {
-    console.error(chalk.red(`TermLink Error: ${(err as Error).message}`));
+    console.error(chalk.red(`\nTermLink Error: ${(err as Error).message}`));
+    console.error(chalk.dim('\n💡 Quick troubleshooting & environment suggestions:'));
+    if (process.platform === 'win32') {
+      console.error(chalk.dim('  • Install/Update Node.js (LTS): ') + chalk.cyan('winget install OpenJS.NodeJS.LTS'));
+    } else if (process.platform === 'darwin') {
+      console.error(chalk.dim('  • Install/Update Node.js (LTS): ') + chalk.cyan('brew install node'));
+    } else {
+      console.error(chalk.dim('  • Install/Update Node.js (LTS): ') + chalk.cyan('curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs'));
+    }
+    console.error(chalk.dim('  • Check network & signaling:   ') + chalk.cyan('tl diagnostics'));
+    console.error(chalk.dim('  • Reset configuration:         ') + chalk.cyan('tl config reset\n'));
     process.exit(1);
   });
 }

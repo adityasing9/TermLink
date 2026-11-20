@@ -95,7 +95,7 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 ```
 
 1. **Signaling & Handshake**: The host requests a 2-digit room code from the signaling server. The client enters the code (`termlink 47`).
-2. **Host Approval**: The host terminal receives an alert displaying the requester's device name, OS, and cryptographic fingerprint. The host runs `/approve` to grant entry.
+2. **Instant Zero-Click Match**: The guest terminal connects instantly without waiting for manual host approval.
 3. **P2P Direct Connection**: Both peers exchange candidate network endpoints (LAN IPs, VPN adapters, public IP discovered via RFC 5389 UDP STUN) and establish a direct TCP connection.
 4. **Opaque E2EE Fallback**: If strict NAT or enterprise firewall rules prevent direct connection, traffic routes seamlessly through the signaling server as opaque ciphertext. The server cannot inspect or tamper with any payload.
 
@@ -105,6 +105,31 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 
 > **Zero configuration required!** TermLink comes out-of-the-box connected to a 24/7 cloud signaling server (`wss://termlink-x5qx.onrender.com/ws`).
 > You and your peers do **not** need to set up servers, configure firewalls, or touch any settings. Just run the command and connect!
+
+### 📦 Install Node.js (If Not Already Installed)
+TermLink runs on any machine with **Node.js (v20+ LTS)**. If your terminal says `npx`, `npm`, or `tl` is not recognized, install Node.js with one command:
+
+* **Windows (PowerShell / Command Prompt)**:
+  ```powershell
+  winget install OpenJS.NodeJS.LTS
+  ```
+  *(Or download the installer from [nodejs.org](https://nodejs.org))*.
+
+* **macOS (Terminal)**:
+  ```bash
+  brew install node
+  ```
+
+* **Linux (Ubuntu / Debian / WSL)**:
+  ```bash
+  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs
+  ```
+
+* **Any Platform (Fast Node Manager - fnm)**:
+  ```bash
+  curl -fsSL https://fnm.vercel.app/install | bash
+  fnm install --lts
+  ```
 
 ```text
 ┌─────────────────────────────────────────┐         ┌─────────────────────────────────────────┐
