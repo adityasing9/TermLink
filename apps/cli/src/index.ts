@@ -1,4 +1,6 @@
+import net from 'node:net';
 import readline from 'node:readline';
+import type http from 'node:http';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import {
@@ -313,25 +315,89 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
   });
 }
 
+async function ensureLocalServerIfConfigured(serverUrl: string): Promise<http.Server | null> {
+  try {
+    const url = new URL(serverUrl);
+    const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '0.0.0.0';
+    if (!isLocal) return null;
+
+    const port = Number(url.port || 3000);
+
+    const isRunning = await new Promise<boolean>((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(300);
+      socket.once('connect', () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once('timeout', () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.once('error', () => {
+        resolve(false);
+      });
+      socket.connect(port, '127.0.0.1');
+    });
+
+    if (isRunning) return null;
+
+    const http = await import('node:http');
+    const { TermLinkSignalingServer } = await import('../../signaling-server/src/index');
+
+    const srv = http.createServer((req, res) => {
+      if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, autoSpawned: true, stats: sig.engine.getStats() }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('TermLink Auto-Signaling Server\n');
+    });
+
+    const sig = new TermLinkSignalingServer(srv, {
+      publicBaseUrl: `http://localhost:${port}`,
+      wsPath: url.pathname || '/ws',
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      srv.once('error', reject);
+      srv.listen(port, '0.0.0.0', () => resolve());
+    });
+
+    console.log(chalk.dim(`⚡ Auto-started local signaling server on ws://0.0.0.0:${port}${url.pathname || '/ws'}`));
+    return srv;
+  } catch {
+    return null;
+  }
+}
+
 async function handleCreateRoom(opts: { name?: string; approval?: boolean; password?: string; code?: string; nonInteractive?: boolean }): Promise<void> {
   const cfg = configManager.load();
+  const autoServer = await ensureLocalServerIfConfigured(cfg.signalingServer);
   const client = new TermLink(cfg);
-  await client.initialize();
-  const room = await client.createRoom({
-    roomName: opts.name || `${cfg.deviceName} Room`,
-    requireHostApproval: opts.approval ?? cfg.requireHostApproval,
-    password: opts.password,
-    preferredCode: opts.code,
-  });
 
-  if (opts.nonInteractive) {
-    console.log(JSON.stringify({ roomId: room.roomId, code: room.code, joinUrl: room.joinUrl }));
-    await client.disconnect();
-    return;
+  try {
+    await client.initialize();
+    const room = await client.createRoom({
+      roomName: opts.name || `${cfg.deviceName} Room`,
+      requireHostApproval: opts.approval ?? cfg.requireHostApproval,
+      password: opts.password,
+      preferredCode: opts.code,
+    });
+
+    if (opts.nonInteractive) {
+      console.log(JSON.stringify({ roomId: room.roomId, code: room.code, joinUrl: room.joinUrl }));
+      await client.disconnect();
+      autoServer?.close();
+      return;
+    }
+
+    console.log(renderRoomCreated(room.roomInfo));
+    await runInteractiveSession(client, room);
+  } finally {
+    autoServer?.close();
   }
-
-  console.log(renderRoomCreated(room.roomInfo));
-  await runInteractiveSession(client, room);
 }
 
 async function handleJoinRoom(target: string, opts: { password?: string; nonInteractive?: boolean }): Promise<void> {
@@ -583,13 +649,18 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .option('-n, --name <name>', 'Terminal session name', 'shared-shell')
     .action(async (opts) => {
       const cfg = configManager.load();
+      const autoServer = await ensureLocalServerIfConfigured(cfg.signalingServer);
       const client = new TermLink(cfg);
-      await client.initialize();
-      const room = await client.createRoom({ roomName: `${cfg.deviceName} Terminal`, requireHostApproval: true });
-      console.log(renderRoomCreated(room.roomInfo));
-      room.startTerminalSession(opts.name);
-      console.log(chalk.green(`Shared terminal "${opts.name}" started. Remote peers are Disabled until granted access.`));
-      await runInteractiveSession(client, room);
+      try {
+        await client.initialize();
+        const room = await client.createRoom({ roomName: `${cfg.deviceName} Terminal`, requireHostApproval: true });
+        console.log(renderRoomCreated(room.roomInfo));
+        room.startTerminalSession(opts.name);
+        console.log(chalk.green(`Shared terminal "${opts.name}" started. Remote peers are Disabled until granted access.`));
+        await runInteractiveSession(client, room);
+      } finally {
+        autoServer?.close();
+      }
     });
 
   program

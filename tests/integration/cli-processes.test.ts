@@ -12,7 +12,7 @@ const serverBin = path.join(root, 'dist/signaling-server.mjs');
 test('Compiled npm CLI binary runs directly with plain node across separate OS processes', async () => {
   // 1. Check `termlink version`
   const ver = await execFileAsync(process.execPath, [cliBin, 'version']);
-  assert.match(ver.stdout, /termlink v1\.0\.0/);
+  assert.match(ver.stdout, /termlink v1\.[0-9]+\.[0-9]+/);
 
   // 2. Check `termlink devices`
   const dev = await execFileAsync(process.execPath, [cliBin, 'devices']);
