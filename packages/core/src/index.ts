@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-export const TERMLINK_VERSION = '1.0.0';
+export const TERMLINK_VERSION = '1.0.1';
 export const PROTOCOL_VERSION = '1.0';
 
 export type PeerRole = 'owner' | 'admin' | 'collaborator' | 'viewer' | 'guest';
