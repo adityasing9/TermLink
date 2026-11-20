@@ -32,11 +32,11 @@ jobs:
       - name: Type check
         run: npm run lint
 
+      - name: Build packages
+        run: npm run build
+
       - name: Run unit, integration, and security tests
         run: npm test
-
-      - name: Build web companion
-        run: npm run build
 
       - name: Validate npm package tarball
         run: npm pack --dry-run
