@@ -1,5 +1,5 @@
 {
-  "name": "termlink",
+  "name": "@adityasing9/termlink",
   "version": "1.0.0",
   "description": "Cross-platform P2P terminal collaboration platform — connect terminals, share files with SHA-256 verification, and collaborate directly.",
   "license": "MIT",

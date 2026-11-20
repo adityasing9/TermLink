@@ -107,13 +107,13 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 ### Global Installation
 
 ```bash
-npm install -g termlink
+npm install -g @adityasing9/termlink
 ```
 
 ### Run with npx
 
 ```bash
-npx termlink
+npx @adityasing9/termlink
 ```
 
 ### Run from Source
@@ -529,7 +529,7 @@ When inside an active room session prompt (`termlink[47]> `), the following comm
 You can embed TermLink directly into your own Node.js or TypeScript applications:
 
 ```typescript
-import { TermLink } from 'termlink';
+import { TermLink } from '@adityasing9/termlink';
 
 async function main() {
   const client = new TermLink({
