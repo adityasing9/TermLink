@@ -1,7 +1,8 @@
-# TermLink (`termlink`)
+# TermLink (`@adityasing9/termlink`)
 
 > **Connect terminals. Share files. Collaborate directly. Peer-to-peer.**
 
+[![npm version](https://img.shields.io/npm/v/@adityasing9/termlink.svg?color=cb3837)](https://www.npmjs.com/package/@adityasing9/termlink)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node: >=20.0.0](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![Platform: Windows | Linux | macOS](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
@@ -104,19 +105,43 @@ With TermLink, you can create a temporary room with a memorable **2-digit quick-
 
 ## Quick Start
 
-### Global Installation
+### 1. Instant Run with npx (No Installation Needed)
+
+Run TermLink directly in your terminal:
+```bash
+npx @adityasing9/termlink
+```
+
+Or join a room instantly by 2-digit code:
+```bash
+npx @adityasing9/termlink 47
+```
+
+---
+
+### 2. Global Installation
+
+Install TermLink globally to use the `termlink` command from any terminal:
 
 ```bash
 npm install -g @adityasing9/termlink
 ```
 
-### Run with npx
-
+Once installed, use the short `termlink` command anywhere:
 ```bash
-npx @adityasing9/termlink
+# Interactive menu:
+termlink
+
+# Create a room:
+termlink create
+
+# Join room 47:
+termlink 47
 ```
 
-### Run from Source
+---
+
+### 3. Run from Source (Local Development)
 
 ```bash
 git clone https://github.com/adityasing9/TermLink.git
