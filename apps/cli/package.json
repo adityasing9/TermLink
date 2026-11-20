@@ -1,0 +1,9 @@
+{
+  "name": "@termlink/cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "termlink": "./bin/termlink.mjs"
+  },
+  "main": "./src/index.ts"
+}

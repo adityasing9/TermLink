@@ -1,0 +1,1818 @@
+# MASTER PROJECT PROMPT — TERMLINK
+
+## Project Name
+**TermLink**
+
+## Tagline
+**Connect terminals. Share files. Collaborate directly.**
+
+## Project Vision
+
+Build a production-oriented, cross-platform, peer-to-peer terminal collaboration platform that allows people to connect their computers directly through terminal commands.
+
+TermLink should allow users to create rooms, invite others using extremely short 2-digit codes or shareable links, communicate with group members, transfer files, and collaboratively share terminal sessions.
+
+The product must work across Windows, Linux, macOS, physical computers, cloud VMs, VMware virtual machines, VirtualBox VMs, and WSL where supported.
+
+This is a real software product, not a landing-page demo, mockup, prototype UI, or simulated networking application.
+
+Build a functional implementation with real networking, real data transfer, security, error handling, automated tests, documentation, and a usable command-line interface.
+
+---
+
+# 1. PRIMARY OBJECTIVES
+
+Build TermLink with the following objectives:
+
+1. Extremely easy to use.
+2. Cross-platform compatibility.
+3. Peer-to-peer communication whenever possible.
+4. Group rooms with multiple connected peers.
+5. Very short default room joining codes.
+6. Secure communication.
+7. No mandatory user account for basic functionality.
+8. Minimal centralized infrastructure.
+9. Direct file transfers between peers.
+10. Optional relay fallback when direct connections fail.
+11. Interactive and read-only terminal sharing.
+12. Easy installation and distribution through npm.
+13. Reliable connection handling and reconnection.
+14. A modular architecture that can be expanded in the future.
+
+---
+
+# 2. TARGET PLATFORMS
+
+Support the following operating systems and environments.
+
+## Windows
+
+- Windows 10
+- Windows 11
+- Windows Server where compatible
+- PowerShell
+- Windows Terminal
+- Command Prompt
+
+## Linux
+
+- Ubuntu
+- Debian
+- Fedora
+- Arch Linux
+- Kali Linux
+- Linux Mint
+- Other mainstream distributions
+
+## macOS
+
+- Intel Macs
+- Apple Silicon Macs
+- Terminal
+- iTerm2
+
+## Virtualization environments
+
+- VMware Workstation
+- VMware Fusion
+- VMware ESXi guest VMs
+- VirtualBox
+- Hyper-V
+- Cloud virtual machines
+- WSL2
+
+TermLink must run inside the guest operating system.
+
+VMware is not a separate platform-specific implementation. TermLink should work in a VMware guest using its operating system's native installation.
+
+Support different network configurations where technically possible:
+
+- Bridged
+- NAT
+- Host-only
+- Custom virtual networks
+- VPN-connected machines
+
+Document network limitations clearly.
+
+---
+
+# 3. CORE USER EXPERIENCE
+
+The application must prioritize simplicity.
+
+The ideal workflow:
+
+1. User installs TermLink.
+2. User executes `termlink`.
+3. A room is automatically created.
+4. A two-digit room code is displayed.
+5. A short invitation link is displayed.
+6. Other users run `termlink 47`.
+7. The host approves incoming participants.
+8. Participants become connected.
+9. Users can chat, share files, or collaborate.
+
+The user should not need to understand networking, IP addresses, ports, NAT, WebRTC, or server configuration for normal usage.
+
+---
+
+# 4. DEFAULT QUICK CONNECT — TWO DIGIT CODE
+
+The default joining method MUST use a two-digit code.
+
+Valid codes:
+
+`00` through `99`
+
+The code must be displayed prominently and be easy to remember and communicate.
+
+Example:
+
+```text
+╔════════════════════════════════════════════╗
+║                TERMLINK                  ║
+║          P2P COLLABORATION                ║
+╚════════════════════════════════════════════╝
+
+Room created successfully!
+
+ROOM CODE
+
+                  47
+
+Join from another terminal:
+
+    termlink 47
+
+Invite link:
+
+    https://YOUR-DOMAIN/join/47
+
+Status: Waiting for peers...
+
+Connected members: 1
+```
+
+The room code should be assigned dynamically.
+
+The room should not require the user to configure a long token manually.
+
+## Joining
+
+Users should be able to join using any of these methods:
+
+```bash
+termlink 47
+```
+
+```bash
+termlink join 47
+```
+
+```bash
+termlink join https://YOUR-DOMAIN/join/47
+```
+
+Allow invitation links to open the TermLink CLI or an optional companion application if the operating system supports it.
+
+## IMPORTANT SECURITY REQUIREMENT
+
+Two-digit codes contain only 100 possibilities.
+
+Therefore:
+
+- The two-digit code is a room discovery identifier, not an authentication credential.
+- Never use the code itself as an encryption key.
+- Never use it as the sole authentication mechanism.
+- Require host approval for new members by default.
+- Rate-limit connection attempts.
+- Prevent automated room enumeration.
+- Apply short room-code lifetimes.
+- Handle code collisions safely.
+- Show the room name and host identity before the user joins.
+- Make it possible to reject unknown peers.
+- Do not expose a room to arbitrary users without permission.
+
+If multiple rooms have the same code, handle this safely.
+
+Implement a room-resolution system. If the code is ambiguous, show available room candidates with limited metadata and require the user to select the intended room. Do not connect to a random room.
+
+## Room code lifecycle
+
+- Room code assigned when a room is created.
+- Room code becomes inactive when the room closes.
+- Rooms can optionally rotate their code.
+- Reconnection should be supported for existing authenticated members.
+- Host can disable public quick-connect.
+- Host can require a password or additional verification.
+- Host can generate stronger invitation links.
+
+---
+
+# 5. INVITATION LINKS
+
+Implement an invitation link system.
+
+Link structure should be configurable:
+
+```text
+https://YOUR-DOMAIN/join/47
+```
+
+Also support a secure invitation token:
+
+```text
+https://YOUR-DOMAIN/invite/SECURE-TOKEN
+```
+
+The short room code is convenient.
+
+The secure invitation token is useful when the host wants to invite someone without exposing a room to public discovery.
+
+## Link requirements
+
+- Create join links automatically.
+- Copy link to clipboard.
+- Display link in terminal.
+- Allow opening link on another device.
+- Validate links.
+- Support expiration.
+- Support revocation.
+- Support one-time invitations.
+- Support configurable permissions.
+- Never place sensitive credentials directly in public URLs.
+- Use HTTPS for hosted invitation services.
+- Provide a configurable signaling server URL.
+- Do not hardcode a domain that the developer does not own.
+
+During local development, use localhost links, a documented development URL, or an invitation URI scheme.
+
+Do not pretend that a real public short-link domain exists until one is configured.
+
+---
+
+# 6. GROUP CONNECTION SYSTEM
+
+Group connections are a fundamental feature, not an optional future addition.
+
+Users should be able to create rooms with multiple participants.
+
+Example:
+
+```text
+Room: DEV TEAM
+Code: 47
+
+Connected peers: 5
+
+● AADI-PC          Host
+● RAHUL-LAPTOP    Member
+● UBUNTU-VM       Member
+● KALI-LINUX      Member
+● MACBOOK         Member
+```
+
+Implement:
+
+- Group creation
+- Group joining
+- Member discovery
+- Member list
+- Connection status
+- Host identification
+- Member identity
+- Group messaging
+- Private peer messaging
+- Group file sharing
+- Direct file transfer
+- Member removal
+- Invitation generation
+- Room closing
+- Host transfer where appropriate
+- Reconnection
+- Leave room
+- Connection diagnostics
+
+## Initial group size
+
+Target:
+
+- 2–8 peers: fully supported initial group size.
+- 9–20 peers: experimental and optimized.
+- Larger groups: future scalable architecture.
+
+Do not claim arbitrary scalability without performance testing.
+
+---
+
+# 7. NETWORK ARCHITECTURE
+
+Use a decentralized-first architecture.
+
+The architecture should include:
+
+## A. CLI application
+
+Runs on every participating computer.
+
+Responsibilities:
+
+- User interface
+- Local identity
+- Room management
+- Messaging
+- File operations
+- Terminal sessions
+- Permission checks
+- Peer connections
+
+## B. Signaling server
+
+A lightweight service used for:
+
+- Room discovery
+- Initial connection negotiation
+- Invitation handling
+- Peer discovery
+- Connection metadata exchange
+- Group membership coordination
+
+The signaling server must not automatically receive the contents of private messages, files, or terminal streams.
+
+## C. P2P transport
+
+Use a suitable real peer-to-peer transport.
+
+Evaluate cross-platform Node.js options before selecting a dependency.
+
+Prefer technologies that support:
+
+- Encrypted connections
+- Reliable data channels
+- UDP connectivity
+- NAT traversal
+- Direct peer connections
+- Cross-platform Node.js support
+- Group networking
+
+Potential technologies include:
+
+- WebRTC Data Channels
+- A compatible Node.js WebRTC implementation
+- Secure peer-to-peer transport alternatives if WebRTC implementation compatibility is problematic
+
+Do not choose an unstable dependency without evaluating its compatibility.
+
+## D. STUN
+
+Use STUN to assist with NAT traversal and peer connectivity.
+
+Allow configuration of STUN servers.
+
+## E. TURN relay fallback
+
+Implement optional TURN relay fallback for situations where direct P2P cannot connect.
+
+Relay should be configurable.
+
+The application should display whether a connection is:
+
+- Direct P2P
+- Relayed
+- Local network
+- VPN
+- Connecting
+- Disconnected
+
+Do not falsely report a direct connection when data is relayed.
+
+## F. Group topology
+
+Support different connection strategies.
+
+### Small groups
+
+Use full mesh when practical.
+
+### Larger groups
+
+Use hybrid connectivity and selective peer connections.
+
+The system must not blindly create unlimited peer connections.
+
+Use a configurable topology manager.
+
+For a mesh of N peers:
+
+`connections = N × (N - 1) / 2`
+
+Monitor resource consumption.
+
+Implement a reasonable peer connection limit.
+
+---
+
+# 8. GROUP CHAT
+
+Create a functional terminal-based chat system.
+
+Example:
+
+```text
+TERMLINK CHAT
+Room: DEV TEAM
+
+[12:30] AADI: Server started
+[12:31] RAHUL: Connection successful
+[12:31] DEV: Testing file transfer
+
+Type a message:
+>
+```
+
+Features:
+
+- Group messaging
+- Private messages
+- Message timestamps
+- Sender names
+- System messages
+- Connection notifications
+- Member joined notifications
+- Member left notifications
+- Message delivery status where possible
+- Message history for the current session
+- Optional local history
+- Clear chat
+- Reconnect support
+
+Commands:
+
+```text
+/chat
+/msg Rahul Hello
+/members
+/status
+/clear
+/help
+/leave
+```
+
+Do not store chat history remotely by default.
+
+---
+
+# 9. P2P FILE TRANSFER
+
+Implement real file transfer.
+
+Example:
+
+```bash
+termlink send ./project.zip
+```
+
+Send to the entire group:
+
+```bash
+termlink send ./project.zip --group
+```
+
+Send to a specific peer:
+
+```bash
+termlink send ./project.zip --to Rahul
+```
+
+Transfer prompt:
+
+```text
+Incoming file
+
+Filename: project.zip
+Size: 450 MB
+Sender: AADI-PC
+
+Accept transfer? [Y/n]
+```
+
+Implement:
+
+- Single file transfer
+- Multiple file transfer
+- Group file transfer
+- Peer-specific transfer
+- File size display
+- Transfer progress
+- Transfer speed
+- Estimated remaining time
+- Pause
+- Resume where feasible
+- Cancel
+- Destination selection
+- Filename conflict handling
+- Recipient acceptance
+- Rejection
+- Chunked transfers
+- File integrity verification
+- SHA-256 verification
+- Error handling
+- Interrupted transfer recovery
+- Transfer history stored locally
+
+Never silently overwrite existing files.
+
+Never execute received files automatically.
+
+## Transfer protocol
+
+Design a robust transfer protocol.
+
+Use chunked data transmission.
+
+Include:
+
+- Transfer ID
+- Metadata
+- File name
+- File size
+- Chunk indexes
+- Chunk checksums
+- File checksum
+- Transfer status
+- Acknowledgements
+- Resume state
+
+Avoid loading entire large files into memory.
+
+Use streaming APIs.
+
+Implement backpressure.
+
+---
+
+# 10. PEER-ASSISTED GROUP DISTRIBUTION
+
+Design the system so a future version can support peer-assisted file distribution.
+
+Example:
+
+A host shares a 2 GB file with 10 members.
+
+Instead of sending 10 separate full copies, recipients who receive valid chunks may optionally share those chunks with other members.
+
+Implement this as a future-ready protocol module.
+
+Do not implement unsafe or uncontrolled file redistribution.
+
+The original sender or host must control sharing permissions.
+
+---
+
+# 11. REMOTE TERMINAL SHARING
+
+Implement terminal sharing as a major feature, but keep it disabled until explicitly enabled by the host.
+
+Host:
+
+```bash
+termlink session share
+```
+
+Output:
+
+```text
+TERMINAL SESSION
+
+Session: backend-server
+Owner: AADI-PC
+
+Members:
+
+1. RAHUL-LAPTOP    Read-only
+2. DEV-PC          Read-only
+
+Interactive access: Disabled
+```
+
+## Modes
+
+### Read-only
+
+Participants can see terminal output but cannot type commands.
+
+### Interactive
+
+Approved users can interact with the terminal.
+
+### Host-controlled
+
+The host retains control and may grant/revoke interactive access.
+
+## Features
+
+- Terminal session sharing
+- Terminal output streaming
+- Interactive input
+- Read-only viewers
+- Host approval
+- Per-peer permission
+- Session locking
+- Session termination
+- Participant removal
+- Revoke permissions immediately
+- Connection-loss handling
+- Session audit records
+- Multiple sessions where practical
+
+## Cross-platform shell support
+
+Windows:
+
+- PowerShell
+- Windows Terminal environments
+- cmd.exe as optional compatibility
+
+Linux:
+
+- Bash
+- Zsh
+- Other configured shells
+
+macOS:
+
+- Zsh
+- Bash
+- Configured shell
+
+Use a PTY abstraction.
+
+Use platform-specific adapters only when necessary.
+
+Do not assume Bash exists on Windows.
+
+Do not assume PowerShell exists on Linux.
+
+## SECURITY REQUIREMENTS
+
+Remote shell access must never be enabled automatically.
+
+Before granting access:
+
+1. Host explicitly starts the session.
+2. Host chooses permitted participants.
+3. Host chooses read-only or interactive mode.
+4. Participants receive an access notification.
+5. Host can revoke access instantly.
+
+No hidden shell execution.
+
+No silent remote commands.
+
+No background remote access without explicit user consent.
+
+Do not execute commands received from another peer unless the user has explicitly granted interactive access.
+
+---
+
+# 12. COMMAND SHARING
+
+Implement a safe command-sharing feature.
+
+Users can send commands to another participant for review.
+
+Example:
+
+```text
+Command proposal from AADI-PC:
+
+npm install
+
+Execute?
+
+[Accept] [Reject] [Edit]
+```
+
+By default:
+
+- Commands are suggestions only.
+- Commands are not automatically executed.
+- The recipient reviews commands.
+- The recipient explicitly approves execution.
+- Host can disable command sharing.
+- Dangerous commands should receive additional warnings.
+- Maintain local audit records.
+
+Never execute a received command automatically.
+
+---
+
+# 13. USER IDENTITY
+
+Implement lightweight local identities.
+
+Each installation should be able to generate a cryptographic identity.
+
+Identity includes:
+
+- Public key
+- Private key stored locally
+- Device name
+- Platform
+- Unique device identifier
+- Peer fingerprint
+
+The private key must never be transmitted.
+
+Display identity verification when connecting to a peer.
+
+Example:
+
+```text
+Peer:
+
+Name: RAHUL-LAPTOP
+Platform: Windows
+Fingerprint: A2:9F:81:7B...
+
+Trust this peer?
+
+[Y] Trust
+[N] Reject
+```
+
+Allow:
+
+- Trusted devices
+- Revoked devices
+- Identity verification
+- Device renaming
+- Local identity reset
+- Identity export where safe
+- Trust management
+
+Do not rely solely on a username or room code for authentication.
+
+---
+
+# 14. SECURITY AND PRIVACY
+
+Security is a first-class requirement.
+
+Implement:
+
+- Encrypted transport
+- Peer authentication
+- Cryptographic identity
+- Secure random token generation
+- Invitation expiration
+- Host approval
+- Connection rate limiting
+- Secure room management
+- File-transfer acceptance
+- Remote shell permissions
+- Local secret storage
+- Input validation
+- Safe filenames
+- Path traversal prevention
+- Symlink handling
+- Resource limits
+- Connection timeout
+- Abuse protection
+- Logging controls
+
+## Threat model
+
+Consider:
+
+- Unauthorized room joining
+- Code guessing
+- Room enumeration
+- Impersonation
+- Malicious peers
+- Malicious files
+- Path traversal
+- File overwrite
+- Denial of service
+- Oversized payloads
+- Connection flooding
+- Malicious command execution
+- Signaling server compromise
+- Relay server compromise
+- Peer identity spoofing
+
+Do not claim that the system is completely secure.
+
+Document limitations and security assumptions.
+
+---
+
+# 15. PERMISSION SYSTEM
+
+Create role-based permissions.
+
+## Owner
+
+- Create room
+- Close room
+- Invite peers
+- Remove peers
+- Grant permissions
+- Transfer ownership
+- Share files
+- Create terminal sessions
+- Grant terminal access
+- Manage administrators
+
+## Admin
+
+- Manage participants
+- Invite peers
+- Moderate chat
+- Approve transfers
+- Manage permissions within allowed limits
+
+## Collaborator
+
+- Chat
+- Transfer files
+- Participate in approved terminal sessions
+
+## Viewer
+
+- Chat if enabled
+- View approved terminal sessions
+- Receive files
+
+## Guest
+
+- Limited access
+- Host approval
+- Restricted file access
+- No terminal execution privileges
+
+Permissions must be configurable.
+
+---
+
+# 16. CLI DESIGN
+
+Create a professional CLI.
+
+Use a clean, intuitive command structure.
+
+## Main command
+
+```bash
+termlink
+```
+
+Launch an interactive menu.
+
+Menu:
+
+```text
+╔════════════════════════════════════╗
+║             TERMLINK              ║
+╚════════════════════════════════════╝
+
+1. Create a room
+2. Join a room
+3. Chat
+4. Transfer files
+5. Share terminal
+6. Trusted devices
+7. Network diagnostics
+8. Settings
+9. Exit
+```
+
+## Commands
+
+```bash
+termlink
+termlink 47
+termlink create
+termlink host
+termlink join 47
+termlink join LINK
+termlink room create
+termlink room close
+termlink room members
+termlink room invite
+termlink room settings
+termlink chat
+termlink send FILE
+termlink send FILE --group
+termlink send FILE --to PEER
+termlink receive
+termlink session share
+termlink session list
+termlink session stop
+termlink peers
+termlink devices
+termlink trust
+termlink diagnostics
+termlink config
+termlink status
+termlink update
+termlink version
+termlink help
+```
+
+Add proper argument validation.
+
+Use helpful errors.
+
+Provide autocomplete where feasible.
+
+Provide a non-interactive mode for scripts.
+
+---
+
+# 17. TERMINAL UI
+
+Create a modern terminal user interface.
+
+Requirements:
+
+- Clear visual hierarchy
+- Cross-platform rendering
+- Colors where supported
+- Graceful fallback for basic terminals
+- Keyboard navigation
+- Progress bars
+- Connection indicators
+- Member list
+- Notifications
+- Help
+- Responsive layouts
+- Unicode support with fallback
+- No excessive animations
+- Accessibility
+
+Use a stable CLI framework and terminal UI framework.
+
+Possible tools:
+
+- Commander.js
+- Ink
+- Ora
+- Chalk
+- Prompts
+- Cli-progress
+
+Choose compatible libraries and avoid unnecessary dependencies.
+
+---
+
+# 18. NETWORK DIAGNOSTICS
+
+Add:
+
+```bash
+termlink diagnostics
+```
+
+It should report:
+
+- Node.js version
+- TermLink version
+- Operating system
+- Network interfaces
+- Local connectivity
+- Signaling server connectivity
+- STUN test
+- Direct connection test
+- Relay availability
+- Firewall warning
+- NAT information where available
+- Port information where applicable
+
+Example:
+
+```text
+TERMLINK DIAGNOSTICS
+
+Platform: Windows 11
+Node: 22.x
+Connection: Internet
+
+Signaling: Connected
+STUN: Successful
+Direct P2P: Available
+Relay: Available
+
+Status: Ready
+```
+
+Do not display sensitive IP addresses unless the user requests detailed diagnostics.
+
+---
+
+# 19. ARCHITECTURE
+
+Use a modular monorepo.
+
+Suggested structure:
+
+```text
+termlink/
+│
+├── apps/
+│   ├── cli/
+│   └── signaling-server/
+│
+├── packages/
+│   ├── core/
+│   ├── identity/
+│   ├── protocol/
+│   ├── networking/
+│   ├── room-engine/
+│   ├── file-transfer/
+│   ├── terminal-session/
+│   ├── permissions/
+│   ├── diagnostics/
+│   └── sdk/
+│
+├── tests/
+│   ├── integration/
+│   ├── networking/
+│   ├── cross-platform/
+│   └── security/
+│
+├── docs/
+│   ├── installation.md
+│   ├── usage.md
+│   ├── architecture.md
+│   ├── networking.md
+│   ├── security.md
+│   ├── troubleshooting.md
+│   ├── development.md
+│   └── contributing.md
+│
+├── examples/
+│
+├── scripts/
+│
+├── .github/
+│   └── workflows/
+│
+├── package.json
+├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+└── SECURITY.md
+```
+
+Use a workspace-based monorepo.
+
+Use a clear dependency structure.
+
+Avoid circular dependencies.
+
+Separate networking, user interface, protocol logic, and platform-specific terminal functionality.
+
+---
+
+# 20. TECHNOLOGY STACK
+
+Use TypeScript.
+
+Recommended:
+
+- Node.js LTS
+- TypeScript
+- npm workspaces
+- Commander.js
+- Ink or another suitable CLI UI framework
+- WebSocket signaling
+- WebRTC-compatible P2P transport
+- STUN
+- Optional TURN
+- Node.js streaming APIs
+- PTY abstraction
+- Vitest or Node.js test runner
+- ESLint
+- Prettier
+- GitHub Actions
+- tsup or another suitable build system
+
+Research compatibility before selecting the networking and PTY dependencies.
+
+Ensure that dependencies work on Windows, Linux and macOS.
+
+Avoid packages that only support one operating system unless they are isolated behind a platform adapter.
+
+---
+
+# 21. SDK
+
+Expose a developer SDK.
+
+Example:
+
+```typescript
+import { TermLink } from "termlink";
+
+const client = new TermLink();
+
+await client.initialize();
+
+const room = await client.createRoom();
+
+console.log(room.code);
+
+room.on("peerJoined", (peer) => {
+  console.log(`${peer.name} connected`);
+});
+
+room.on("message", (message) => {
+  console.log(message.text);
+});
+
+await room.sendMessage("Hello, everyone!");
+```
+
+Create a well-defined public API.
+
+Support:
+
+- Room creation
+- Room joining
+- Disconnect
+- Messages
+- Peer events
+- File transfer
+- Permissions
+- Connection status
+- Peer identity
+- Room information
+
+Provide TypeScript declarations.
+
+Document the API.
+
+Do not expose internal implementation details unnecessarily.
+
+---
+
+# 22. CONFIGURATION
+
+Support configuration.
+
+Example:
+
+```json
+{
+  "deviceName": "AADI-PC",
+  "signalingServer": "wss://YOUR-SERVER",
+  "stunServers": [],
+  "turnServers": [],
+  "defaultRoomMode": "quick",
+  "requireHostApproval": true,
+  "maxPeers": 8,
+  "fileTransferDirectory": "./downloads",
+  "autoAcceptFiles": false,
+  "terminalSharingEnabled": false,
+  "telemetryEnabled": false
+}
+```
+
+Configuration must be validated.
+
+Provide:
+
+```bash
+termlink config
+termlink config set deviceName AADI-PC
+termlink config reset
+```
+
+Never store private keys in plain configuration files.
+
+Use platform-appropriate secure storage where possible.
+
+---
+
+# 23. INSTALLATION AND DISTRIBUTION
+
+The package must be installable through npm.
+
+Global installation:
+
+```bash
+npm install -g termlink
+```
+
+Then:
+
+```bash
+termlink
+```
+
+Also support:
+
+```bash
+npx termlink
+```
+
+Create:
+
+- npm package metadata
+- Executable bin entry
+- Versioning
+- Build scripts
+- Release scripts
+- Package validation
+- npm publishing instructions
+- README installation instructions
+- Platform-specific troubleshooting
+
+Do not publish automatically without the developer's approval.
+
+Use a test package or dry-run during development.
+
+Validate with:
+
+```bash
+npm pack --dry-run
+```
+
+---
+
+# 24. TESTING
+
+Create a complete test suite.
+
+## Unit tests
+
+- Room codes
+- Invitation tokens
+- Identity
+- Permissions
+- Protocol messages
+- File chunking
+- File validation
+- Configuration
+- Error handling
+
+## Integration tests
+
+- Create room
+- Join room
+- Multiple peers
+- Messaging
+- Disconnect
+- Reconnect
+- Transfer files
+- Transfer cancellation
+- Host removal
+- Permission revocation
+
+## Cross-platform tests
+
+Use GitHub Actions.
+
+Test at least:
+
+- Windows
+- Ubuntu Linux
+- macOS
+
+Use supported Node.js versions.
+
+## Networking tests
+
+Test:
+
+- Same LAN
+- Different networks
+- NAT
+- Relay fallback
+- Network loss
+- Reconnection
+- Peer disappearance
+- Signaling failure
+- Duplicate room codes
+
+## Security tests
+
+Test:
+
+- Invalid invitations
+- Expired tokens
+- Code guessing rate limits
+- Unauthorized shell requests
+- Malicious file names
+- Path traversal
+- Oversized files
+- Unauthorized peer actions
+
+Do not claim a test passed unless it was actually executed.
+
+---
+
+# 25. GITHUB AND CI/CD
+
+Create GitHub Actions workflows.
+
+## CI
+
+On:
+
+- Pull requests
+- Pushes
+- Release branches
+
+Run:
+
+1. Install dependencies
+2. Type check
+3. Lint
+4. Unit tests
+5. Integration tests
+6. Build
+7. Package validation
+
+Matrix:
+
+- Windows
+- Ubuntu
+- macOS
+
+## Release
+
+Create a controlled release workflow.
+
+- Version validation
+- Changelog
+- Git tags
+- Build
+- Test
+- npm publish approval
+- GitHub release
+
+Do not expose npm publishing credentials.
+
+Use secure GitHub secrets or trusted publishing.
+
+---
+
+# 26. DOCUMENTATION
+
+Write a complete README.
+
+Include:
+
+- Project description
+- Features
+- Screenshots or terminal examples
+- Installation
+- Quick start
+- Create room
+- Join room
+- Chat
+- File transfer
+- Group sharing
+- Terminal sharing
+- Permissions
+- Windows setup
+- Linux setup
+- macOS setup
+- VMware setup
+- VirtualBox setup
+- Troubleshooting
+- Network requirements
+- Security
+- Roadmap
+- Contribution guide
+- License
+
+Create detailed docs for:
+
+- Architecture
+- Networking
+- Protocol
+- Security
+- Developer SDK
+- Installation
+- Troubleshooting
+- Self-hosting signaling
+- TURN configuration
+- Terminal-sharing permissions
+
+---
+
+# 27. VMWARE AND VIRTUAL MACHINE DOCUMENTATION
+
+Document the following scenarios.
+
+## Scenario A
+
+Windows host + Ubuntu VMware guest.
+
+Both run TermLink.
+
+## Scenario B
+
+Windows host + Kali VMware guest + Ubuntu VM.
+
+All join the same group.
+
+## Scenario C
+
+Different physical computers and VMs across separate networks.
+
+Use direct connectivity where possible and relay fallback when necessary.
+
+## Scenario D
+
+Host-only networking.
+
+Document that host-only networks may not have internet access and may only permit connections between machines on the virtual network.
+
+## Scenario E
+
+NAT networking.
+
+Explain NAT traversal limitations and how relay fallback may help.
+
+Provide clear troubleshooting commands.
+
+---
+
+# 28. USER EXPERIENCE REQUIREMENTS
+
+The product should feel polished.
+
+Use:
+
+- Clear onboarding
+- Easy joining
+- Minimal typing
+- Two-digit codes
+- Invitation links
+- Easy clipboard copying
+- Host approval
+- Clear connection state
+- File transfer progress
+- Human-readable errors
+- Helpful troubleshooting
+- Consistent terminal UI
+
+Avoid:
+
+- Complicated configuration
+- Unnecessary login
+- Long default codes
+- Confusing technical errors
+- Fake connection states
+- Fake file transfers
+- Fake terminal sharing
+- Unnecessary cloud uploads
+
+---
+
+# 29. FUTURE FEATURES
+
+Prepare architecture for:
+
+- Voice chat
+- Video chat
+- Screen sharing
+- GUI desktop application
+- Mobile companion
+- Android
+- Remote development
+- Shared project folders
+- Collaborative coding
+- Plugin system
+- Custom transport providers
+- Enterprise groups
+- Persistent rooms
+- Team management
+- Peer-assisted file distribution
+- Anonymous temporary rooms
+- Custom room domains
+- Device trust management
+- Web interface
+- Terminal session recording
+- Local AI integration
+- AI-assisted command explanations
+
+These must not interfere with the core product.
+
+---
+
+# 30. DEVELOPMENT APPROACH
+
+Do not attempt to create every feature in a single unverified step.
+
+Develop incrementally.
+
+## PHASE 1 — FOUNDATION
+
+Build:
+
+- Repository
+- Workspace
+- TypeScript
+- CLI
+- Configuration
+- Logging
+- Cross-platform compatibility
+- Build process
+- Tests
+
+Deliver a working CLI.
+
+## PHASE 2 — SIGNALING AND ROOMS
+
+Build:
+
+- Signaling server
+- Room creation
+- Two-digit room code system
+- Invitation links
+- Join flow
+- Host approval
+- Member list
+- Room lifecycle
+- Collision handling
+
+Deliver real room functionality.
+
+## PHASE 3 — P2P CONNECTION
+
+Build:
+
+- Peer discovery
+- Connection negotiation
+- P2P transport
+- Encryption
+- Peer identity
+- Connection status
+- Direct connection
+- Relay fallback
+
+Verify actual peer connectivity.
+
+## PHASE 4 — GROUP CHAT
+
+Build:
+
+- Messaging
+- Group events
+- Private messages
+- Chat UI
+- Reconnection
+
+Verify messaging across operating systems.
+
+## PHASE 5 — FILE TRANSFER
+
+Build:
+
+- File transfer protocol
+- Streaming
+- Chunking
+- Progress
+- Recipient approval
+- Integrity
+- Cancellation
+- Recovery
+
+Verify actual files are transferred.
+
+## PHASE 6 — PERMISSIONS
+
+Build:
+
+- Roles
+- Host approval
+- Admin
+- Guest
+- Permission controls
+- Peer removal
+- Trust management
+
+## PHASE 7 — TERMINAL SHARING
+
+Build:
+
+- PTY abstraction
+- Read-only mode
+- Interactive mode
+- Session management
+- Consent
+- Permission revocation
+- OS-specific shell support
+
+## PHASE 8 — PRODUCTION QUALITY
+
+Build:
+
+- Diagnostics
+- Cross-platform tests
+- Security tests
+- Documentation
+- npm packaging
+- CI/CD
+- Release workflow
+
+---
+
+# 31. STRICT IMPLEMENTATION RULES
+
+Follow these rules throughout development:
+
+1. Do not build only a frontend.
+2. Do not use mock data for actual networking.
+3. Do not simulate peer connections.
+4. Do not simulate file transfers.
+5. Do not pretend remote terminal functionality is working.
+6. Do not use placeholder handlers for completed features.
+7. Do not claim tests passed without executing them.
+8. Do not leave core features as TODOs while claiming completion.
+9. Do not hide incomplete functionality.
+10. Do not automatically execute commands received from peers.
+11. Do not automatically accept incoming files.
+12. Do not automatically enable remote shell access.
+13. Do not expose private keys.
+14. Do not hardcode credentials.
+15. Do not hardcode a domain we do not own.
+16. Do not use insecure random numbers for security-sensitive tokens.
+17. Validate all incoming network messages.
+18. Use streaming for large files.
+19. Prevent path traversal.
+20. Respect platform differences.
+21. Make the application usable in Windows, Linux and macOS terminals.
+22. Use modular architecture.
+23. Maintain dependency compatibility.
+24. Provide proper error handling.
+25. Do not remove existing working features when adding new features.
+
+If a feature cannot be completed, clearly state:
+
+- What was implemented
+- What is incomplete
+- Why it is incomplete
+- What dependencies are required
+- How to continue implementing it
+
+---
+
+# 32. REQUIRED DELIVERABLES
+
+At completion, produce:
+
+1. Complete source code.
+2. Monorepo structure.
+3. CLI application.
+4. Signaling server.
+5. P2P networking.
+6. Group rooms.
+7. Two-digit quick-connect.
+8. Invitation links.
+9. Group messaging.
+10. File transfers.
+11. Permission system.
+12. Remote terminal-sharing implementation or clearly documented incomplete state.
+13. SDK.
+14. Unit tests.
+15. Integration tests.
+16. Cross-platform tests.
+17. GitHub Actions workflows.
+18. README.
+19. Security documentation.
+20. Architecture documentation.
+21. Installation guide.
+22. VMware/VM documentation.
+23. Troubleshooting guide.
+24. npm publishing guide.
+25. Development guide.
+26. Release checklist.
+27. Roadmap.
+
+---
+
+# 33. DEFINITION OF DONE
+
+The project is not considered complete merely because it compiles.
+
+The MVP must be demonstrated with at least two actual TermLink instances running on separate processes.
+
+Required demonstration:
+
+### Test 1 — Room creation
+
+Computer A:
+
+```bash
+termlink
+```
+
+Creates room with a two-digit code.
+
+### Test 2 — Join
+
+Computer B:
+
+```bash
+termlink 47
+```
+
+Joins the room after approval.
+
+### Test 3 — Group connection
+
+Computer C joins the same room.
+
+All three members are visible.
+
+### Test 4 — Messaging
+
+Computer A sends a message.
+
+Computers B and C receive it.
+
+### Test 5 — File transfer
+
+Computer A sends a real file.
+
+Computer B receives it.
+
+Verify SHA-256.
+
+### Test 6 — Disconnect
+
+Computer C disconnects.
+
+The group receives the event.
+
+### Test 7 — Reconnection
+
+Computer C reconnects where supported.
+
+### Test 8 — Cross-platform
+
+Demonstrate Windows-to-Linux connectivity.
+
+### Test 9 — VM
+
+Demonstrate a host-to-VM or VM-to-VM connection.
+
+### Test 10 — Security
+
+Unauthorized peer attempts to join.
+
+Host can reject the request.
+
+---
+
+# 34. FIRST ACTION
+
+Before writing code:
+
+1. Analyze the project requirements.
+2. Propose the architecture.
+3. Evaluate networking dependencies.
+4. Evaluate cross-platform PTY dependencies.
+5. Identify technical risks.
+6. Propose repository structure.
+7. Create a phased implementation plan.
+8. Identify the smallest working MVP.
+9. Begin implementation after architecture decisions.
+10. Keep a project progress checklist.
+
+Do not stop at planning. After producing the architecture, begin building the actual project.
+
+Build and verify each phase before proceeding.
+
+At every stage, provide:
+
+- Files created
+- Features implemented
+- Commands to run
+- Tests executed
+- Results
+- Known limitations
+- Next phase
+
+---
+
+# FINAL PRODUCT
+
+TermLink should ultimately become:
+
+**A cross-platform P2P terminal collaboration platform that lets users connect Windows, Linux, macOS, physical computers and virtual machines using an extremely simple two-digit room code or invitation link, communicate with groups, transfer files directly, and securely share terminal sessions with permission-based access.**
+
+The default experience must remain:
+
+**Open terminal → Get 2-digit code → Share code/link → Peers join → Approve → Connected.**
+
+Prioritize a working, secure, tested product over a large number of incomplete features.
+
+Build TermLink as a professional open-source project with long-term maintainability, real-world usability, and a clear path to future expansion.

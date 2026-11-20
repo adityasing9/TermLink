@@ -1,0 +1,48 @@
+name: TermLink Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Validate & Publish Release
+    runs-on: ubuntu-latest
+    environment: npm-release
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify version matches git tag
+        run: |
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          PKG_VER="$(node -p "require('./package.json').version")"
+          test "$TAG_VER" = "$PKG_VER"
+
+      - name: Run full test suite & build
+        run: |
+          npm run lint
+          npm test
+          npm run build
+          npm pack --dry-run
+
+      - name: Publish to npm (requires environment approval & NPM_TOKEN secret)
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

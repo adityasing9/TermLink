@@ -1,0 +1,69 @@
+{
+  "name": "termlink",
+  "version": "1.0.0",
+  "description": "Cross-platform P2P terminal collaboration platform — connect terminals, share files with SHA-256 verification, and collaborate directly.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "termlink",
+    "p2p",
+    "terminal",
+    "cli",
+    "collaboration",
+    "file-transfer",
+    "webrtc",
+    "e2ee"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "termlink": "./dist/bin/termlink.mjs",
+    "termlink-server": "./dist/signaling-server.mjs"
+  },
+  "main": "./dist/sdk/index.mjs",
+  "types": "./dist/types/packages/sdk/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/packages/sdk/src/index.d.ts",
+      "import": "./dist/sdk/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "tsx server.ts",
+    "start": "node dist/signaling-server.mjs",
+    "build": "node scripts/build.mjs",
+    "cli": "node dist/bin/termlink.mjs",
+    "signaling": "node dist/signaling-server.mjs",
+    "test": "tsx --test tests/unit/*.test.ts tests/integration/*.test.ts tests/security/*.test.ts",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
+    "test:integration": "tsx --test tests/integration/*.test.ts",
+    "test:security": "tsx --test tests/security/*.test.ts",
+    "pack:check": "npm pack --dry-run",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^6.0.1",
+    "commander": "^15.1.0",
+    "dotenv": "^17.2.3",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/ws": "^8.18.2",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2"
+  }
+}
