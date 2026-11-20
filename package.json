@@ -1,6 +1,6 @@
 {
   "name": "@2we/tl",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Cross-platform P2P terminal collaboration platform — connect terminals, share files with SHA-256 verification, and collaborate directly.",
   "license": "MIT",
   "type": "module",
@@ -48,7 +48,7 @@
     "cli": "node dist/bin/termlink.mjs",
     "signaling": "node dist/signaling-server.mjs",
     "pretest": "node scripts/build.mjs",
-    "test": "tsx --test tests/unit/*.test.ts tests/integration/*.test.ts tests/security/*.test.ts",
+    "test": "node scripts/test.mjs",
     "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:integration": "tsx --test tests/integration/*.test.ts",
     "test:security": "tsx --test tests/security/*.test.ts",

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-export const TERMLINK_VERSION = '1.0.5';
+export const TERMLINK_VERSION = '1.0.6';
 export const PROTOCOL_VERSION = '1.0';
 
 export type PeerRole = 'owner' | 'admin' | 'collaborator' | 'viewer' | 'guest';
@@ -91,10 +91,10 @@ export function validateConfig(input: Partial<TermLinkConfig>): ConfigValidation
     ...input,
   };
 
-  if (typeof merged.deviceName !== 'string' || merged.deviceName.trim().length < 1 || merged.deviceName.length > 64) {
-    errors.push('deviceName must be a non-empty string up to 64 characters.');
+  if (typeof merged.deviceName !== 'string' || merged.deviceName.trim().length < 1) {
+    errors.push('deviceName must be a non-empty string.');
   } else {
-    merged.deviceName = merged.deviceName.trim().replace(/[\r\n\t]/g, '');
+    merged.deviceName = merged.deviceName.trim().replace(/[\r\n\t]/g, '').slice(0, 64);
   }
 
   if (typeof merged.signalingServer !== 'string' || !/^wss?:\/\/[^\s]+$/i.test(merged.signalingServer)) {
