@@ -67,6 +67,35 @@ test('Compiled npm CLI binary runs directly with plain node across separate OS p
     assert.match(parsed.code, /^[0-9]{2}$/);
     assert.ok(parsed.roomId.startsWith('rm_'));
     assert.ok(parsed.joinUrl.endsWith(`/join/${parsed.code}`));
+
+    // 6. Test custom 2-digit code hosting: `tl create 77`
+    const customCodeCreated = await execFileAsync(
+      process.execPath,
+      [cliBin, 'create', '77', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
+      { env: testEnv }
+    );
+    const parsedCustom = JSON.parse(customCodeCreated.stdout.trim());
+    assert.equal(parsedCustom.code, '77');
+
+    // 7. Test custom code hosting with flag: `tl create -c 88`
+    const flagCustom = await execFileAsync(
+      process.execPath,
+      [cliBin, 'create', '-c', '88', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
+      { env: testEnv }
+    );
+    const parsedFlag = JSON.parse(flagCustom.stdout.trim());
+    assert.equal(parsedFlag.code, '88');
+
+    // 8. Test device renaming: `tl name MyTestDevice`
+    const renameOut = await execFileAsync(
+      process.execPath,
+      [cliBin, 'name', 'MyTestDevice'],
+      { env: testEnv }
+    );
+    assert.match(renameOut.stdout, /Device name.*updated to:.*MyTestDevice/);
+
+    const devAfterRename = await execFileAsync(process.execPath, [cliBin, 'devices'], { env: testEnv });
+    assert.match(devAfterRename.stdout, /Local Device:\s+MyTestDevice/);
   } finally {
     serverProc.kill('SIGTERM');
     try {

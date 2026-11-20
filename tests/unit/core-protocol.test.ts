@@ -13,6 +13,7 @@ import {
   decryptFromPeer,
   encryptForPeer,
   generateLocalIdentity,
+  IdentityStore,
 } from '../../packages/identity/src/index';
 import {
   canModifyTargetRole,
@@ -217,4 +218,39 @@ test('peer-assisted distribution respects host authorization flag and signaling 
 
   assert.equal(validateClientSignalingMessage('not-json').ok, false);
   assert.equal(validateClientSignalingMessage(JSON.stringify({ type: 'unknown:op' })).ok, false);
+});
+
+test('device renaming updates cryptographic identity and local storage cleanly', () => {
+  const tmpDir = path.join(os.tmpdir(), `termlink-rename-test-${Date.now()}`);
+  fs.mkdirSync(tmpDir, { recursive: true });
+  try {
+    const store = new IdentityStore(tmpDir);
+    const initial = store.loadOrCreate('ORIGINAL-DEVICE');
+    assert.equal(initial.publicIdentity.deviceName, 'ORIGINAL-DEVICE');
+
+    const updated = store.renameDevice('CUSTOM-LAPTOP');
+    assert.equal(updated.publicIdentity.deviceName, 'CUSTOM-LAPTOP');
+
+    // Reload from disk
+    const reloaded = store.loadOrCreate();
+    assert.equal(reloaded.publicIdentity.deviceName, 'CUSTOM-LAPTOP');
+    assert.equal(reloaded.publicIdentity.fingerprint, initial.publicIdentity.fingerprint);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('host can allocate custom 2-digit room code', () => {
+  const engine = new RoomEngine({ publicBaseUrl: 'http://localhost:3000' });
+  const host = generateLocalIdentity('HOST-CUSTOM');
+
+  const { room } = engine.createRoom({
+    ownerPeerId: 'pHost',
+    ownerIdentity: host.publicIdentity,
+    roomName: 'Custom Code Room',
+    preferredCode: '77',
+  });
+
+  assert.equal(room.code, '77');
+  assert.equal(room.roomName, 'Custom Code Room');
 });

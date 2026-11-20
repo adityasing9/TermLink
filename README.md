@@ -153,21 +153,26 @@ TermLink runs on any machine with **Node.js (v20+ LTS)**. If your terminal says 
 Open your terminal (PowerShell, Command Prompt, macOS Terminal, or Linux bash) and run:
 
 ```bash
+# Host with an auto-generated random 2-digit code:
 npx @2we/tl create
+
+# Or host with your own CUSTOM 2-digit code (00-99):
+npx @2we/tl create 77
+# (or: tl create 77 / tl create -c 77)
 ```
-*(Tip: Or install globally with `npm install -g @2we/tl` so you can simply type `tl create`)*.
+*(Tip: Or install globally with `npm install -g @2we/tl` so you can simply type `tl create 77`)*.
 
 TermLink will display your room information and a **2-digit room code**:
 ```text
 ══════════════════════════════════════════════════════════════
   ROOM CREATED: ADITYA-PC Room
-  Room Code:    47
-  Join Link:    https://termlink-x5qx.onrender.com/join/47
+  Room Code:    77
+  Join Link:    https://termlink-x5qx.onrender.com/join/77
 ══════════════════════════════════════════════════════════════
 Waiting for peers to join...
-termlink[47]>
+termlink[77]>
 ```
-Share the 2-digit code (e.g. `47`) with your friend!
+Share the 2-digit code (e.g. `77`) with your friend!
 
 ---
 
@@ -175,9 +180,9 @@ Share the 2-digit code (e.g. `47`) with your friend!
 Your friend opens their terminal on their computer (anywhere in the world) and runs:
 
 ```bash
-npx @2we/tl 47
+npx @2we/tl 77
 ```
-*(Replace `47` with your actual room code. Or install globally with `npm install -g @2we/tl` and run `tl 47`)*.
+*(Replace `77` with your actual room code. Or install globally with `npm install -g @2we/tl` and run `tl 77`)*.
 
 ---
 
@@ -195,6 +200,11 @@ And Computer B's terminal enters the room immediately!
 ### What you can do inside the room:
 
 * 💬 **Chat**: Just type your message and press Enter.
+* 🏷️ **Rename Your Device**:
+  ```text
+  /name Alice-Laptop
+  ```
+  *(Changes your display name live and saves it for future sessions)*.
 * 🔒 **Private Message**: Send a private message only one person can read:
   ```text
   /msg RAHUL-LAPTOP Hey, check this secret key
@@ -218,6 +228,44 @@ And Computer B's terminal enters the room immediately!
   ```text
   /leave
   ```
+
+---
+
+### 🏷️ Custom Device Names & Custom Room Codes
+
+#### Renaming Your Device:
+Every device can easily set its own custom name so friends recognize you instantly:
+```bash
+# Set device name directly:
+tl name Alice-MacBook
+
+# Or prompt interactively:
+tl name
+
+# Or use the interactive main menu:
+tl
+# (Choose Option 3: "Rename this device")
+
+# Or during an active room chat:
+/name Alice-MacBook
+```
+Your custom name is stored in your local identity and automatically broadcasted to peers in every session.
+
+#### Choosing a Custom 2-Digit Code:
+The host can pick any 2-digit number (`00` to `99`) when creating a room:
+```bash
+# Directly on the command line:
+tl create 77
+tl create -c 77
+
+# Or through the interactive menu:
+tl
+# Choose Option 1 ("Create a room") and enter 77 when prompted!
+```
+Your peers then connect in seconds with:
+```bash
+tl 77
+```
 
 ---
 

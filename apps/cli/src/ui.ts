@@ -36,7 +36,7 @@ export function renderRoomCreated(room: RoomInfo): string {
     '',
     'Join from another terminal:',
     '',
-    `    ${chalk.cyan(`termlink ${room.code}`)}`,
+    `    ${chalk.cyan.bold(`tl ${room.code}`)}  ${chalk.dim(`(or termlink ${room.code})`)}`,
     '',
     'Invite link:',
     '',

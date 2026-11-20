@@ -35,6 +35,22 @@ function askQuestion(rl: readline.Interface, prompt: string): Promise<string> {
   return new Promise((resolve) => rl.question(prompt, (ans) => resolve(ans.trim())));
 }
 
+function setLocalDeviceName(newName: string): { oldName: string; newName: string; fingerprint: string } {
+  const cleanName = newName.trim().slice(0, 64);
+  if (!cleanName) {
+    throw new Error('Device name cannot be empty.');
+  }
+  const current = configManager.load();
+  const oldName = current.deviceName;
+  configManager.setKey('deviceName', cleanName);
+  const updated = identityStore.renameDevice(cleanName);
+  return {
+    oldName,
+    newName: cleanName,
+    fingerprint: updated.publicIdentity.fingerprint,
+  };
+}
+
 async function runInteractiveSession(client: TermLink, session: RoomSession): Promise<void> {
   const rl = createPromptInterface();
   const pendingOffers = new Map<string, IncomingFileOffer>();
@@ -145,6 +161,7 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
                 'Commands:',
                 '  /members                     Show connected peers',
                 '  /status                      Show room and connection status',
+                '  /name <newName>              Change your device display name',
                 '  /msg <peer> <text>           Send private E2EE message',
                 '  /send <filePath>             Send file to group',
                 '  /approve <reqId>             Approve pending peer',
@@ -171,6 +188,18 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
               `Room: ${session.roomInfo.roomName} | Code: ${session.code} | Members: ${session.members.length}/${session.roomInfo.maxPeers} | Topology: ${session.topology.getTopologySummary(session.members.length).mode}`
             );
             break;
+          case '/name':
+          case '/rename': {
+            const newName = rest.join(' ').trim();
+            if (!newName) {
+              console.log(chalk.yellow(`Current device name: ${session.localDeviceName}. Usage: /name <newName>`));
+            } else {
+              session.renameDevice(newName);
+              const updated = setLocalDeviceName(newName);
+              console.log(chalk.green(`✔ Device display name updated to: ${chalk.bold(updated.newName)}`));
+            }
+            break;
+          }
           case '/clear':
             console.clear();
             break;
@@ -445,23 +474,41 @@ async function handleJoinRoom(target: string, opts: { password?: string; signali
 
 async function runMainMenu(): Promise<void> {
   const rl = createPromptInterface();
+  const cfg = configManager.load();
+  const self = identityStore.loadOrCreate(cfg.deviceName).publicIdentity;
+
   console.log('');
   console.log(renderBanner('TERMINAL COLLABORATION'));
+  console.log(chalk.dim(`Device: ${chalk.bold(self.deviceName)} | Fingerprint: ${self.fingerprint.slice(0, 17)}...`));
   console.log('');
-  console.log('1. Create a room');
-  console.log('2. Join a room');
-  console.log('3. Trusted devices');
-  console.log('4. Network diagnostics');
-  console.log('5. Settings');
-  console.log('6. Exit');
+  console.log('1. Create a room (Host)');
+  console.log('2. Join a room (Enter 2-digit code)');
+  console.log(`3. Rename this device (Current: ${self.deviceName})`);
+  console.log('4. Trusted devices');
+  console.log('5. Network diagnostics');
+  console.log('6. Settings & Config');
+  console.log('7. Exit');
   console.log('');
-  const choice = await askQuestion(rl, 'Select an option [1-6]: ');
+  const choice = await askQuestion(rl, 'Select an option [1-7]: ');
 
   switch (choice) {
     case '1': {
+      const codeInput = await askQuestion(rl, 'Custom 2-digit room code 00-99 (leave blank for random): ');
+      let customCode: string | undefined = undefined;
+      if (codeInput.trim()) {
+        let clean = codeInput.trim();
+        if (/^\d{1,2}$/.test(clean)) {
+          clean = clean.padStart(2, '0');
+        }
+        if (isValidTwoDigitCode(clean)) {
+          customCode = clean;
+        } else {
+          console.log(chalk.yellow(`Invalid 2-digit code "${codeInput}". A random code will be generated.`));
+        }
+      }
       const name = await askQuestion(rl, 'Room name (leave blank for default): ');
       rl.close();
-      await handleCreateRoom({ name: name || undefined });
+      await handleCreateRoom({ name: name || undefined, code: customCode });
       break;
     }
     case '2': {
@@ -471,9 +518,21 @@ async function runMainMenu(): Promise<void> {
       break;
     }
     case '3': {
+      console.log(`\nCurrent device name: ${chalk.cyan.bold(self.deviceName)}`);
+      const newName = await askQuestion(rl, 'Enter new device name (or press Enter to keep): ');
+      rl.close();
+      if (newName.trim()) {
+        const res = setLocalDeviceName(newName.trim());
+        console.log(chalk.green(`\n✔ Device name successfully updated to: ${chalk.bold(res.newName)}`));
+        console.log(chalk.dim(`Fingerprint: ${res.fingerprint}\n`));
+      } else {
+        console.log('\nDevice name unchanged.\n');
+      }
+      break;
+    }
+    case '4': {
       rl.close();
       const devices = identityStore.listDevices();
-      const self = identityStore.loadOrCreate().publicIdentity;
       console.log(`\nLocal Identity: ${self.deviceName} (${self.platform})`);
       console.log(`Fingerprint:    ${self.fingerprint}\n`);
       if (devices.length === 0) {
@@ -485,13 +544,13 @@ async function runMainMenu(): Promise<void> {
       }
       break;
     }
-    case '4': {
+    case '5': {
       rl.close();
       const report = await runDiagnostics({ config: configManager.load(), detailed: false });
       console.log('\n' + formatDiagnosticsText(report, false) + '\n');
       break;
     }
-    case '5': {
+    case '6': {
       rl.close();
       console.log('\nCurrent Configuration (' + configManager.getPath() + '):');
       console.log(JSON.stringify(configManager.load(), null, 2));
@@ -540,26 +599,64 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .version(TERMLINK_VERSION);
 
   program
-    .command('create')
+    .command('create [code]')
     .alias('host')
-    .description('Create a new TermLink room with a 2-digit code')
+    .description('Create a new TermLink room with an optional custom 2-digit code (e.g. tl create 77)')
+    .option('-c, --code <code>', 'Custom 2-digit room code (00-99)')
     .option('-n, --name <name>', 'Room name')
     .option('-m, --max-peers <number>', 'Maximum peer limit (2-50, default: 8)')
     .option('--approval', 'Require host approval for each peer (default: off)')
     .option('-p, --password <password>', 'Optional room password')
-    .option('--code <code>', 'Preferred 2-digit room code (00-99)')
     .option('-s, --signaling <url>', 'Override signaling server WebSocket URL')
     .option('--non-interactive', 'Output room JSON and exit (for scripts)')
-    .action(async (opts) => {
+    .action(async (codeArg: string | undefined, opts) => {
+      let chosenCode = opts.code || codeArg;
+      if (chosenCode && /^\d{1,2}$/.test(chosenCode.trim())) {
+        chosenCode = chosenCode.trim().padStart(2, '0');
+      }
+      if (chosenCode && !isValidTwoDigitCode(chosenCode)) {
+        console.error(
+          chalk.red(
+            `Error: Custom room code must be 2 digits between 00 and 99 (received: "${codeArg || opts.code}").`
+          )
+        );
+        process.exit(1);
+      }
       await handleCreateRoom({
         name: opts.name,
         approval: opts.approval,
         password: opts.password,
-        code: opts.code,
+        code: chosenCode,
         maxPeers: opts.maxPeers ? Number(opts.maxPeers) : undefined,
         signaling: opts.signaling,
         nonInteractive: opts.nonInteractive,
       });
+    });
+
+  program
+    .command('name [newName]')
+    .alias('rename')
+    .description('View or set your device display name (e.g. tl name Alice-Laptop)')
+    .action(async (newName?: string) => {
+      const cfg = configManager.load();
+      const current = identityStore.loadOrCreate(cfg.deviceName).publicIdentity.deviceName;
+      if (newName && newName.trim()) {
+        const res = setLocalDeviceName(newName.trim());
+        console.log(chalk.green(`✔ Device name successfully updated to: ${chalk.bold(res.newName)}`));
+        console.log(chalk.dim(`Fingerprint: ${res.fingerprint}`));
+      } else {
+        const rl = createPromptInterface();
+        console.log(`Current device name: ${chalk.cyan.bold(current)}`);
+        const answer = await askQuestion(rl, 'Enter new device name (or press Enter to keep): ');
+        rl.close();
+        if (answer.trim()) {
+          const res = setLocalDeviceName(answer.trim());
+          console.log(chalk.green(`✔ Device name successfully updated to: ${chalk.bold(res.newName)}`));
+          console.log(chalk.dim(`Fingerprint: ${res.fingerprint}`));
+        } else {
+          console.log('Device name unchanged.');
+        }
+      }
     });
 
   program
@@ -601,10 +698,21 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
 
   const roomCmd = program.command('room').description('Room lifecycle management');
   roomCmd
-    .command('create')
-    .description('Create a new room')
+    .command('create [code]')
+    .description('Create a new room with optional custom 2-digit code')
+    .option('-c, --code <code>', 'Custom 2-digit room code (00-99)')
     .option('-n, --name <name>', 'Room name')
-    .action(async (opts) => handleCreateRoom({ name: opts.name }));
+    .action(async (codeArg: string | undefined, opts) => {
+      let chosenCode = opts.code || codeArg;
+      if (chosenCode && /^\d{1,2}$/.test(chosenCode.trim())) {
+        chosenCode = chosenCode.trim().padStart(2, '0');
+      }
+      if (chosenCode && !isValidTwoDigitCode(chosenCode)) {
+        console.error(chalk.red(`Error: Custom room code must be 2 digits between 00 and 99.`));
+        process.exit(1);
+      }
+      return handleCreateRoom({ name: opts.name, code: chosenCode });
+    });
   roomCmd
     .command('lookup <code>')
     .description('Inspect public room candidates matching a 2-digit code')

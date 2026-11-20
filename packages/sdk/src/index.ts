@@ -141,6 +141,22 @@ export class RoomSession extends EventEmitter {
     return this.remoteTerminalState;
   }
 
+  get localDeviceName(): string {
+    return this.localIdentity.publicIdentity.deviceName;
+  }
+
+  renameDevice(newName: string): void {
+    const clean = newName.trim().slice(0, 64);
+    if (!clean) return;
+    const oldName = this.localIdentity.publicIdentity.deviceName;
+    this.localIdentity.publicIdentity.deviceName = clean;
+    const selfMember = this.roomInfo.members.find((m) => m.peerId === this.localPeerId);
+    if (selfMember) {
+      selfMember.identity.deviceName = clean;
+    }
+    void this.sendMessage(`* has renamed their device from "${oldName}" to "${clean}"`);
+  }
+
   /** @internal */
   updateRoomInfo(room: RoomInfo): void {
     this.roomInfo = room;
@@ -914,7 +930,11 @@ export class TermLink extends EventEmitter {
         publicQuickConnect: options.publicQuickConnect ?? this.config.defaultRoomMode === 'quick',
         password: options.password,
         maxPeers: options.maxPeers ?? this.config.maxPeers,
-        preferredCode: options.preferredCode,
+        preferredCode: options.preferredCode
+          ? (/^\d{1,2}$/.test(options.preferredCode.trim())
+              ? options.preferredCode.trim().padStart(2, '0')
+              : options.preferredCode.trim())
+          : undefined,
       });
     });
   }
@@ -1115,6 +1135,14 @@ export class TermLink extends EventEmitter {
         this.emit('error', new TermLinkError(msg.code, msg.message));
         break;
     }
+  }
+
+  renameDevice(newName: string): PeerPublicIdentity {
+    const clean = newName.trim().slice(0, 64);
+    this.config.deviceName = clean;
+    const updated = this.identityStore.renameDevice(clean);
+    this.localIdentity = updated;
+    return updated.publicIdentity;
   }
 
   async disconnect(): Promise<void> {
