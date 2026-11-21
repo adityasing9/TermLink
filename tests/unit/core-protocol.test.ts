@@ -258,3 +258,30 @@ test('host can allocate custom 2-digit room code', () => {
   assert.equal(room.code, '77');
   assert.equal(room.roomName, 'Custom Code Room');
 });
+
+test('trusted devices can be recorded, queried, and revoked', () => {
+  const tmpDir = path.join(os.tmpdir(), `termlink-trust-test-${Date.now()}`);
+  fs.mkdirSync(tmpDir, { recursive: true });
+  try {
+    const store = new IdentityStore(tmpDir);
+    const peer = generateLocalIdentity('PEER-DEVICE');
+    assert.equal(store.isTrusted(peer.publicIdentity), false);
+
+    store.trustDevice(peer.publicIdentity);
+    assert.equal(store.isTrusted(peer.publicIdentity), true);
+
+    const devices = store.listDevices();
+    assert.equal(devices.length, 1);
+    assert.equal(devices[0].deviceName, 'PEER-DEVICE');
+    assert.equal(devices[0].status, 'trusted');
+
+    store.revokeDevice(peer.publicIdentity.deviceId);
+    assert.equal(store.isTrusted(peer.publicIdentity), false);
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {
+      // ignore
+    }
+  }
+});

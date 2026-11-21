@@ -262,10 +262,37 @@ tl create -c 77
 tl
 # Choose Option 1 ("Create a room") and enter 77 when prompted!
 ```
-Your peers then connect in seconds with:
+Peers simply join with:
 ```bash
 tl 77
 ```
+
+#### 🛡️ Adding & Managing Trusted Devices:
+TermLink lets you permanently trust your teammates' and friends' devices using their cryptographic Ed25519 identity fingerprints:
+
+1. **Inside any active room**:
+   ```text
+   /trust Bob-Laptop
+   ```
+   *(Takes Bob's cryptographic public key and adds them to your local trusted devices list)*.
+   Or simply type `/trust` to see a list of connected peers and their trust status.
+
+2. **When approving a join request**:
+   ```text
+   /approve <reqId> --trust
+   ```
+   *(Approves their join request and marks their device as trusted in one command)*.
+
+3. **What trusting does**:
+   - Displays a green `[Trusted]` badge next to their name in `/members` and peer announcements.
+   - When hosting rooms with approval enabled (`tl create --approval`), trusted devices bypass the queue and are **auto-approved instantly** without host intervention.
+
+4. **View & Revoke Trusted Devices**:
+   ```bash
+   tl trust              # View your fingerprint & list all trusted devices
+   tl trust revoke <fingerprint>  # Revoke trust for a device
+   ```
+   *(You can also view trusted devices in the interactive menu `tl` -> Option 4)*.
 
 ---
 

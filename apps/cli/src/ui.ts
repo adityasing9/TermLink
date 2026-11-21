@@ -50,13 +50,17 @@ export function renderRoomCreated(room: RoomInfo): string {
   return lines.join('\n');
 }
 
-export function renderMemberList(room: RoomInfo): string {
+export function renderMemberList(
+  room: RoomInfo,
+  isTrusted?: (identity: RoomMember['identity']) => boolean
+): string {
   const bullet = supportsUnicode ? '●' : '*';
   const rows = room.members.map((m: RoomMember) => {
     const roleLabel = m.role === 'owner' ? chalk.yellow('Host') : chalk.white(m.role);
     const modeLabel = chalk.dim(formatConnectionMode(m.connectionMode));
-    const nameCol = m.identity.deviceName.padEnd(18);
-    return `  ${chalk.green(bullet)} ${chalk.bold(nameCol)} ${roleLabel.padEnd(18)} ${modeLabel}`;
+    const trustBadge = (isTrusted && isTrusted(m.identity)) || m.trusted ? chalk.green(' [Trusted]') : '';
+    const nameCol = `${m.identity.deviceName}${trustBadge}`.padEnd(26);
+    return `  ${chalk.green(bullet)} ${chalk.bold(nameCol)} ${roleLabel.padEnd(14)} ${modeLabel}`;
   });
   return [
     '',

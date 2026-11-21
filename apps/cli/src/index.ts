@@ -55,7 +55,10 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
   const rl = createPromptInterface();
   const pendingOffers = new Map<string, IncomingFileOffer>();
   const pendingProposals = new Map<string, IncomingCommandProposal>();
-  const pendingJoinReqs = new Map<string, { requestId: string; deviceName: string; fingerprint: string }>();
+  const pendingJoinReqs = new Map<
+    string,
+    { requestId: string; identity: import('../../../packages/core/src/index').PeerPublicIdentity; deviceName: string; fingerprint: string }
+  >();
 
   const promptLine = () => {
     rl.setPrompt(chalk.cyan(`termlink[${session.code}]> `));
@@ -63,8 +66,18 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
   };
 
   session.on('joinRequest', (req) => {
+    if (identityStore.isTrusted(req.identity)) {
+      console.log(
+        `\n${chalk.green('✔')} Auto-approved trusted device: ${chalk.bold(req.identity.deviceName)} (${chalk.dim(req.identity.fingerprint)})`
+      );
+      session.approveJoin(req.requestId);
+      promptLine();
+      return;
+    }
+
     pendingJoinReqs.set(req.requestId, {
       requestId: req.requestId,
+      identity: req.identity,
       deviceName: req.identity.deviceName,
       fingerprint: req.identity.fingerprint,
     });
@@ -73,12 +86,16 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
     console.log(`  Name:        ${req.identity.deviceName}`);
     console.log(`  Platform:    ${req.identity.platform}`);
     console.log(`  Fingerprint: ${req.identity.fingerprint}`);
-    console.log(`  Run ${chalk.green(`/approve ${req.requestId}`)} or ${chalk.red(`/reject ${req.requestId}`)}`);
+    console.log(
+      `  Run ${chalk.green(`/approve ${req.requestId}`)} (or ${chalk.green(`/approve ${req.requestId} --trust`)}), or ${chalk.red(`/reject ${req.requestId}`)}`
+    );
     promptLine();
   });
 
   session.on('peerJoined', (member) => {
-    console.log(`\n${chalk.green('●')} ${chalk.bold(member.identity.deviceName)} joined (${member.role})`);
+    const isTrusted = identityStore.isTrusted(member.identity);
+    const trustBadge = isTrusted ? chalk.green(' [Trusted]') : '';
+    console.log(`\n${chalk.green('●')} ${chalk.bold(member.identity.deviceName)}${trustBadge} joined (${member.role})`);
     promptLine();
   });
 
@@ -162,9 +179,11 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
                 '  /members                     Show connected peers',
                 '  /status                      Show room and connection status',
                 '  /name <newName>              Change your device display name',
+                '  /trust [peerName]            Add connected peer to your trusted devices',
+                '  /untrust <peerName>          Revoke trust for a peer device',
                 '  /msg <peer> <text>           Send private E2EE message',
                 '  /send <filePath>             Send file to group',
-                '  /approve <reqId>             Approve pending peer',
+                '  /approve <reqId> [--trust]   Approve pending peer (optionally trust permanently)',
                 '  /reject <reqId>              Reject pending peer',
                 '  /accept-file <transferId>    Accept incoming file transfer',
                 '  /reject-file <transferId>    Reject incoming file transfer',
@@ -181,7 +200,7 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
             );
             break;
           case '/members':
-            console.log(renderMemberList(session.roomInfo));
+            console.log(renderMemberList(session.roomInfo, (id) => identityStore.isTrusted(id)));
             break;
           case '/status':
             console.log(
@@ -224,14 +243,77 @@ async function runInteractiveSession(client: TermLink, session: RoomSession): Pr
             }
             break;
           }
+          case '/trust': {
+            const target = rest.join(' ').trim();
+            if (!target) {
+              const otherMembers = session.members.filter((m) => m.peerId !== session.localPeerId);
+              if (otherMembers.length === 0) {
+                console.log(chalk.yellow('No other peers in room. To trust a device, connect with your peer and run /trust <peerName>.'));
+              } else {
+                console.log('\nPeers in room:');
+                for (const m of otherMembers) {
+                  const trusted = identityStore.isTrusted(m.identity);
+                  const status = trusted
+                    ? chalk.green('[Already Trusted]')
+                    : chalk.cyan(`[Run /trust ${m.identity.deviceName}]`);
+                  console.log(`  - ${chalk.bold(m.identity.deviceName)} (${m.identity.fingerprint}) ${status}`);
+                }
+              }
+            } else {
+              const member = session.members.find(
+                (m) =>
+                  m.peerId !== session.localPeerId &&
+                  (m.identity.deviceName.toLowerCase() === target.toLowerCase() ||
+                    m.peerId === target ||
+                    m.identity.fingerprint.toLowerCase().includes(target.toLowerCase()))
+              );
+              if (!member) {
+                console.log(chalk.yellow(`No peer found matching "${target}". Run /members to see connected peers.`));
+              } else {
+                const rec = identityStore.trustDevice(member.identity);
+                console.log(chalk.green(`✔ Added "${rec.deviceName}" to trusted devices!`));
+                console.log(chalk.dim(`Fingerprint: ${rec.fingerprint}`));
+              }
+            }
+            break;
+          }
+          case '/untrust': {
+            const target = rest.join(' ').trim();
+            if (!target) {
+              console.log(chalk.yellow('Usage: /untrust <peerName-or-fingerprint>'));
+            } else {
+              const devices = identityStore.listDevices();
+              const matched = devices.find(
+                (d) =>
+                  d.deviceName.toLowerCase() === target.toLowerCase() ||
+                  d.fingerprint.toLowerCase().includes(target.toLowerCase()) ||
+                  d.deviceId === target
+              );
+              if (!matched) {
+                console.log(chalk.yellow(`No trusted device matched "${target}".`));
+              } else {
+                identityStore.revokeDevice(matched.deviceId);
+                console.log(chalk.yellow(`Revoked trust for device "${matched.deviceName}" (${matched.fingerprint}).`));
+              }
+            }
+            break;
+          }
           case '/approve': {
-            const reqId = rest[0] || Array.from(pendingJoinReqs.keys())[0];
+            const shouldTrust = rest.includes('--trust');
+            const filtered = rest.filter((a) => a !== '--trust');
+            const reqId = filtered[0] || Array.from(pendingJoinReqs.keys())[0];
+            const pending = reqId ? pendingJoinReqs.get(reqId) : undefined;
             if (!reqId) {
               console.log(chalk.yellow('No pending join requests.'));
             } else {
               session.approveJoin(reqId);
+              if (shouldTrust && pending?.identity) {
+                identityStore.trustDevice(pending.identity);
+                console.log(chalk.green(`Approved ${reqId} and saved ${pending.deviceName} as a trusted device!`));
+              } else {
+                console.log(chalk.green(`Approved ${reqId}`));
+              }
               pendingJoinReqs.delete(reqId);
-              console.log(chalk.green(`Approved ${reqId}`));
             }
             break;
           }
@@ -533,14 +615,18 @@ async function runMainMenu(): Promise<void> {
     case '4': {
       rl.close();
       const devices = identityStore.listDevices();
-      console.log(`\nLocal Identity: ${self.deviceName} (${self.platform})`);
-      console.log(`Fingerprint:    ${self.fingerprint}\n`);
+      console.log(`\nLocal Device: ${chalk.bold(self.deviceName)} (${self.platform})`);
+      console.log(`Fingerprint:  ${self.fingerprint}\n`);
       if (devices.length === 0) {
         console.log('No trusted devices recorded yet.');
+        console.log(chalk.dim('\n💡 Tip: To trust a device, connect with your peer in any room and type: /trust <peerName>\n'));
       } else {
+        console.log(chalk.bold(`Trusted Devices (${devices.length}):`));
         for (const d of devices) {
-          console.log(`- ${d.deviceName} [${d.status}] ${d.fingerprint}`);
+          const statusCol = d.status === 'trusted' ? chalk.green('[trusted]') : chalk.red('[revoked]');
+          console.log(`  - ${chalk.bold(d.deviceName.padEnd(18))} ${statusCol} ${d.fingerprint}`);
         }
+        console.log(chalk.dim('\n💡 Tip: Run "tl trust revoke <fingerprint>" to revoke trust anytime.\n'));
       }
       break;
     }
@@ -848,18 +934,32 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     });
 
   program
-    .command('trust <action> [target]')
+    .command('trust [action] [target]')
     .description('Manage device trust: list | revoke <id-or-fingerprint> | reset-identity')
-    .action((action: string, target?: string) => {
-      if (action === 'revoke' && target) {
+    .action((action?: string, target?: string) => {
+      const act = action || 'list';
+      if (act === 'revoke' && target) {
         const ok = identityStore.revokeDevice(target);
-        console.log(ok ? chalk.green(`Revoked ${target}`) : chalk.yellow(`No device matched ${target}`));
-      } else if (action === 'reset-identity') {
+        console.log(ok ? chalk.green(`✔ Revoked trust for ${target}`) : chalk.yellow(`No device matched ${target}`));
+      } else if (act === 'reset-identity') {
         const fresh = identityStore.resetIdentity(configManager.load().deviceName);
         console.log(chalk.green(`Generated new cryptographic identity. Fingerprint: ${fresh.publicIdentity.fingerprint}`));
       } else {
         const devices = identityStore.listDevices();
-        console.log(JSON.stringify(devices, null, 2));
+        const self = identityStore.loadOrCreate(configManager.load().deviceName).publicIdentity;
+        console.log(`\nLocal Device:  ${chalk.bold(self.deviceName)} (${self.platform})`);
+        console.log(`Fingerprint:   ${self.fingerprint}\n`);
+        if (devices.length === 0) {
+          console.log('No trusted devices recorded yet.');
+          console.log(chalk.dim('\n💡 Tip: To trust a device, join or create a room with your peer and type: /trust <peerName>\n'));
+        } else {
+          console.log(chalk.bold(`Trusted Devices (${devices.length}):`));
+          for (const d of devices) {
+            const statusCol = d.status === 'trusted' ? chalk.green('[trusted]') : chalk.red('[revoked]');
+            console.log(`  - ${chalk.bold(d.deviceName.padEnd(18))} ${statusCol} ${d.fingerprint}`);
+          }
+          console.log(chalk.dim('\n💡 Tip: Run "tl trust revoke <fingerprint>" to revoke trust anytime.\n'));
+        }
       }
     });
 
