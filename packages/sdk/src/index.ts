@@ -925,7 +925,7 @@ export class TermLink extends EventEmitter {
       this.on('_serverMessage', onMsg);
       this.sendSignal({
         type: 'room:create',
-        roomName: options.roomName || `${this.localIdentity.publicIdentity.deviceName} Room`,
+        roomName: (options.roomName || `${this.localIdentity.publicIdentity.deviceName} Room`).slice(0, 64),
         requireHostApproval: options.requireHostApproval ?? this.config.requireHostApproval,
         publicQuickConnect: options.publicQuickConnect ?? this.config.defaultRoomMode === 'quick',
         password: options.password,

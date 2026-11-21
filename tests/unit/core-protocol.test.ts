@@ -149,7 +149,11 @@ test('filename sanitization, path traversal protection, and conflict-free paths 
     assert.equal(size, 14);
     assert.equal(sha256.length, 64);
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try {
+      fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {
+      // ignore
+    }
   }
 });
 

@@ -410,7 +410,7 @@ async function handleCreateRoom(opts: { name?: string; approval?: boolean; passw
   try {
     await client.initialize();
     const room = await client.createRoom({
-      roomName: opts.name || `${cfg.deviceName} Room`,
+      roomName: (opts.name || `${cfg.deviceName} Room`).slice(0, 64),
       requireHostApproval: Boolean(opts.approval),
       password: opts.password,
       preferredCode: opts.code,
@@ -780,7 +780,10 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
       const client = new TermLink(cfg);
       try {
         await client.initialize();
-        const room = await client.createRoom({ roomName: `${cfg.deviceName} Terminal`, requireHostApproval: true });
+        const room = await client.createRoom({
+          roomName: `${cfg.deviceName} Terminal`.slice(0, 64),
+          requireHostApproval: true,
+        });
         console.log(renderRoomCreated(room.roomInfo));
         room.startTerminalSession(opts.name);
         console.log(chalk.green(`Shared terminal "${opts.name}" started. Remote peers are Disabled until granted access.`));

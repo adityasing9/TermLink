@@ -71,7 +71,7 @@ test('Compiled npm CLI binary runs directly with plain node across separate OS p
     // 6. Test custom 2-digit code hosting: `tl create 77`
     const customCodeCreated = await execFileAsync(
       process.execPath,
-      [cliBin, 'create', '77', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
+      [cliBin, 'create', '77', '--name', 'TEST-77', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
       { env: testEnv }
     );
     const parsedCustom = JSON.parse(customCodeCreated.stdout.trim());
@@ -80,7 +80,7 @@ test('Compiled npm CLI binary runs directly with plain node across separate OS p
     // 7. Test custom code hosting with flag: `tl create -c 88`
     const flagCustom = await execFileAsync(
       process.execPath,
-      [cliBin, 'create', '-c', '88', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
+      [cliBin, 'create', '-c', '88', '--name', 'TEST-88', '--signaling', `ws://127.0.0.1:${port}/ws`, '--non-interactive'],
       { env: testEnv }
     );
     const parsedFlag = JSON.parse(flagCustom.stdout.trim());
